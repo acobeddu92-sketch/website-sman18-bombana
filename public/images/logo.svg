@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#15803d" />
+      <stop offset="100%" stop-color="#166534" />
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="url(#grad)" />
+  <!-- Graduation Cap & Leaf Icon -->
+  <path d="M100 45 L160 75 L100 105 L40 75 Z" fill="#ffffff" />
+  <path d="M60 86 V125 C60 145 100 155 100 155 C100 155 140 145 140 125 V86 L100 106 Z" fill="#bbf7d0" />
+  <!-- Leaf element -->
+  <path d="M100 115 C115 115 125 130 120 145 C105 145 95 130 100 115 Z" fill="#22c55e" />
+  <circle cx="160" cy="95" r="5" fill="#facc15" />
+  <path d="M160 75 V95" stroke="#facc15" stroke-width="3" />
+</svg>

@@ -1,0 +1,126 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  username      String    @unique
+  email         String    @unique
+  password_hash String
+  role          String    // "administrator" | "kepala_sekolah" | "guru" | "siswa"
+  is_active     Boolean   @default(true)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model SchoolProfile {
+  id               String    @id @default(cuid())
+  school_name      String    @default("SMA NEGERI 18 BOMBANA")
+  tagline          String?   @default("Membentuk Generasi Berkarakter, Cerdas, dan Berwawasan Lingkungan")
+  logo             String?   @default("/images/logo.svg")
+  address          String?   @default("Jl. Pendidikan No. 18, Kecamatan Poleang, Kabupaten Bombana, Sulawesi Tenggara 93772")
+  phone            String?   @default("+62 821-9988-7766")
+  email            String?   @default("info@sman18bombana.sch.id")
+  website          String?   @default("https://sman18bombana.sch.id")
+  history          String?
+  vision           String?
+  mission          String?
+  goals            String?   // Tujuan Sekolah
+  facilities       String?   // Fasilitas (JSON string)
+  extracurriculars String?   // Ekstrakurikuler (JSON string)
+  updated_at       DateTime  @updatedAt
+
+  @@map("school_profile")
+}
+
+model PrincipalProfile {
+  id         String    @id @default(cuid())
+  name       String    @default("H. Syafruddin, S.Pd., M.Pd.")
+  position   String    @default("Kepala SMA Negeri 18 Bombana")
+  photo      String?   @default("/images/kepala-sekolah.jpg")
+  message    String    @default("Mari kita jadikan sekolah sebagai tempat untuk tumbuh, belajar, berkarya, dan mempersiapkan masa depan dengan penuh optimisme dan integritas tinggi.")
+  updated_at DateTime  @updatedAt
+
+  @@map("principal_profile")
+}
+
+model HomeBackground {
+  id         String    @id @default(cuid())
+  image      String
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@map("home_background")
+}
+
+model DailyMessage {
+  id         String    @id @default(cuid())
+  content    String
+  category   String    // "motivasi" | "nasehat" | "pantun"
+  author     String?   @default("Anonim")
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@map("daily_messages")
+}
+
+model GalleryAlbum {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  photos      GalleryPhoto[]
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+
+  @@map("gallery_albums")
+}
+
+model GalleryPhoto {
+  id          String        @id @default(cuid())
+  album_id    String?
+  album       GalleryAlbum? @relation(fields: [album_id], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  image       String
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+
+  @@map("gallery_photos")
+}
+
+// Model legacy untuk kompatibilitas jika ada query lama
+model Gallery {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  image       String
+  category    String    @default("kegiatan") // "kegiatan" | "fasilitas" | "prestasi"
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@map("gallery")
+}
+
+model Announcement {
+  id           String    @id @default(cuid())
+  title        String
+  content      String
+  image        String?
+  category     String    @default("pengumuman") // "berita" | "pengumuman" | "agenda"
+  published_at DateTime  @default(now())
+  is_published Boolean   @default(true) // true = Published, false = Draft
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@map("announcements")
+}
