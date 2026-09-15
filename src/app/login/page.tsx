@@ -15,10 +15,22 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
+const ROLE_NAMES: Record<string, string> = {
+  administrator: 'Administrator',
+  kepala_sekolah: 'Kepala Sekolah',
+  wakasek_kurikulum: 'Wakasek Kurikulum',
+  wakasek_kesiswaan: 'Wakasek Kesiswaan',
+  kepala_perpustakaan: 'Kepala Perpustakaan',
+  guru_mapel: 'Guru Mapel',
+  wali_kelas: 'Wali Kelas',
+  siswa: 'Siswa',
+};
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialError = searchParams.get('error');
+  const roleParam = searchParams.get('role');
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -110,6 +122,12 @@ function LoginForm() {
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Silakan masuk menggunakan akun sekolah Anda.
           </p>
+          {roleParam && ROLE_NAMES[roleParam] && (
+            <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold animate-fadeIn">
+              <span>Portal:</span>
+              <span className="font-bold">{ROLE_NAMES[roleParam]}</span>
+            </div>
+          )}
         </div>
 
         {/* Notifikasi Error */}

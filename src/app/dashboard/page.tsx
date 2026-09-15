@@ -28,29 +28,119 @@ export default async function DashboardPage() {
     redirect('/admin');
   }
 
-  // Ambil data statistik untuk Kepala Sekolah
-  let stats = {
-    totalTeachers: 0,
-    totalStudents: 0,
-    totalAnnouncements: 0,
-  };
-
+  // Ambil data komprehensif untuk Kepala Sekolah
   if (session.role === 'kepala_sekolah') {
+    let dashboardData = {
+      stats: {
+        totalTeachers: 0,
+        totalStudents: 0,
+        totalWaliKelas: 0,
+        totalActivities: 0,
+        totalAnnouncements: 0,
+      },
+      schoolProfile: null as any,
+      principalProfile: null as any,
+      announcements: [] as any[],
+      galleryAlbums: [] as any[],
+      teachers: [] as any[],
+      students: [] as any[],
+    };
+
     try {
-      const [totalTeachers, totalStudents, totalAnnouncements] = await Promise.all([
+      const [
+        totalTeachers,
+        totalStudents,
+        totalAnnouncements,
+        schoolProfile,
+        principalProfile,
+        announcements,
+        galleryAlbums,
+        teachers,
+        students,
+      ] = await Promise.all([
         prisma.user.count({ where: { role: 'guru', is_active: true } }),
         prisma.user.count({ where: { role: 'siswa', is_active: true } }),
         prisma.announcement.count({ where: { is_published: true } }),
+        prisma.schoolProfile.findFirst(),
+        prisma.principalProfile.findFirst(),
+        prisma.announcement.findMany({
+          orderBy: { published_at: 'desc' },
+          take: 20,
+        }),
+        prisma.galleryAlbum.findMany({
+          include: { photos: true },
+          orderBy: { created_at: 'desc' },
+          take: 12,
+        }),
+        prisma.user.findMany({
+          where: { role: 'guru' },
+          select: { id: true, name: true, email: true, username: true, is_active: true, created_at: true },
+          orderBy: { name: 'asc' },
+        }),
+        prisma.user.findMany({
+          where: { role: 'siswa' },
+          select: { id: true, name: true, email: true, username: true, is_active: true, created_at: true },
+          orderBy: { name: 'asc' },
+          take: 100,
+        }),
       ]);
-      stats = { totalTeachers, totalStudents, totalAnnouncements };
-    } catch (e) {
-      console.error(e);
-    }
-  }
 
-  // Render view berdasarkan role yang telah diverifikasi dari session database
-  if (session.role === 'kepala_sekolah') {
-    return <PrincipalView user={session} stats={stats} />;
+      const totalActivities =
+        galleryAlbums.reduce((acc, curr) => acc + (curr.photos?.length || 0), 0) +
+        announcements.filter((a) => a.category === 'agenda').length;
+
+      const totalWaliKelas = Math.min(totalTeachers, 6);
+
+      dashboardData = {
+        stats: {
+          totalTeachers,
+          totalStudents,
+          totalWaliKelas,
+          totalActivities,
+          totalAnnouncements,
+        },
+        schoolProfile: schoolProfile
+          ? {
+              ...schoolProfile,
+              updated_at: schoolProfile.updated_at.toISOString(),
+            }
+          : null,
+        principalProfile: principalProfile
+          ? {
+              ...principalProfile,
+              updated_at: principalProfile.updated_at.toISOString(),
+            }
+          : null,
+        announcements: announcements.map((a) => ({
+          ...a,
+          published_at: a.published_at.toISOString(),
+          created_at: a.created_at.toISOString(),
+          updated_at: a.updated_at.toISOString(),
+        })),
+        galleryAlbums: galleryAlbums.map((alb) => ({
+          ...alb,
+          created_at: alb.created_at.toISOString(),
+          updated_at: alb.updated_at.toISOString(),
+          photos: alb.photos.map((p) => ({
+            ...p,
+            created_at: p.created_at.toISOString(),
+            updated_at: p.updated_at.toISOString(),
+          })),
+        })),
+        teachers: teachers.map((t) => ({
+          ...t,
+          created_at: t.created_at.toISOString(),
+        })),
+        students: students.map((s) => ({
+          ...s,
+          created_at: s.created_at.toISOString(),
+        })),
+      };
+    } catch (e) {
+      console.error('Error fetching principal dashboard data:', e);
+    }
+
+    return <PrincipalView user={session} data={dashboardData} />;
   }
 
   if (session.role === 'guru') {
