@@ -323,7 +323,7 @@ export default function PrincipalView({ user, data }: Props) {
               </span>
             </div>
             <p className="text-xs font-bold text-slate-800 truncate mt-0.5">
-              {principalProfile?.name || user.name}
+              {user.name}
             </p>
             <p className="text-[11px] text-slate-500 truncate">@{user.username}</p>
           </div>
@@ -480,7 +480,7 @@ export default function PrincipalView({ user, data }: Props) {
             </button>
             <div className="hidden sm:block text-right">
               <p className="text-xs font-bold text-slate-800 leading-none">
-                {principalProfile?.name || user.name}
+                {user.name}
               </p>
               <p className="text-[10px] text-slate-500 mt-0.5">Kepala Sekolah</p>
             </div>
@@ -503,7 +503,7 @@ export default function PrincipalView({ user, data }: Props) {
                     <span>Green & Friendly School Leadership</span>
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                    Selamat Datang, {principalProfile?.name || user.name}
+                    Selamat Datang, {user.name}
                   </h1>
                   <p className="text-emerald-100 text-xs sm:text-sm mt-2 leading-relaxed">
                     Pusat kendali, supervisi pembelajaran, dan monitoring mutu sekolah SMA Negeri 18 Bombana. Pantau aktivitas terkini, setujui laporan, dan awasi perkembangan sekolah secara terintegrasi.
@@ -758,7 +758,7 @@ export default function PrincipalView({ user, data }: Props) {
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
                     <span className="text-[11px] font-bold text-slate-400 block uppercase">Kepala Sekolah</span>
                     <span className="font-bold text-emerald-800 mt-0.5 block">
-                      {principalProfile?.name || 'H. Syafruddin, S.Pd., M.Pd.'}
+                      {principalProfile?.name || user.name}
                     </span>
                   </div>
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
@@ -1644,7 +1644,7 @@ export default function PrincipalView({ user, data }: Props) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
                     <span className="text-[11px] font-bold text-slate-400 block uppercase">Nama Pimpinan</span>
-                    <span className="font-bold text-slate-800 mt-0.5 block">{principalProfile?.name || user.name}</span>
+                    <span className="font-bold text-slate-800 mt-0.5 block">{user.name}</span>
                   </div>
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
                     <span className="text-[11px] font-bold text-slate-400 block uppercase">Username</span>

@@ -28,6 +28,31 @@ export default async function DashboardPage() {
     redirect('/admin');
   }
 
+  // Ambil data akun User yang sedang login langsung dari tabel User Prisma (satu sumber data konsisten)
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      role: true,
+      email: true,
+      is_active: true,
+    },
+  });
+
+  if (!dbUser || !dbUser.is_active) {
+    redirect('/login?error=Akun Anda tidak aktif atau tidak ditemukan.');
+  }
+
+  const currentUser = {
+    id: dbUser.id,
+    name: dbUser.name,
+    username: dbUser.username,
+    role: dbUser.role as any,
+    email: dbUser.email,
+  };
+
   // Ambil data komprehensif untuk Kepala Sekolah
   if (session.role === 'kepala_sekolah') {
     let dashboardData = {
@@ -140,13 +165,13 @@ export default async function DashboardPage() {
       console.error('Error fetching principal dashboard data:', e);
     }
 
-    return <PrincipalView user={session} data={dashboardData} />;
+    return <PrincipalView user={currentUser} data={dashboardData} />;
   }
 
   if (session.role === 'guru') {
-    return <TeacherView user={session} />;
+    return <TeacherView user={currentUser} />;
   }
 
   // Default: siswa
-  return <StudentView user={session} />;
+  return <StudentView user={currentUser} />;
 }
