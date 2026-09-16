@@ -7,7 +7,7 @@ import { UserRole } from '@/lib/constants';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, password } = body;
+    const { username, password, role } = body;
 
     // 1. Validasi input dasar
     if (!username || !password) {
@@ -17,9 +17,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Cari user di database murni berdasarkan username
-    const user = await prisma.user.findUnique({
-      where: { username: String(username).trim() },
+    // 2. Cari user di database berdasarkan username atau email
+    const trimmedUsername = String(username).trim();
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: trimmedUsername },
+          { email: trimmedUsername.toLowerCase() },
+        ],
+      },
     });
 
     if (!user) {
@@ -47,8 +53,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. AMBIL ROLE DARI DATABASE (Role tidak boleh ditentukan dari frontend!)
+    // 5. AMBIL ROLE DARI DATABASE & VALIDASI KECOCOKAN PORTAL (PENTING RBAC)
     const userRole = user.role as UserRole;
+
+    if (role && typeof role === 'string' && role.trim().length > 0) {
+      const selectedRole = role.trim();
+      // Kompatibilitas fallback jika akun lama 'guru' login via portal 'guru_mapel' atau sebaliknya
+      const isGuruCompatible =
+        (userRole === 'guru' && selectedRole === 'guru_mapel') ||
+        (userRole === 'guru_mapel' && selectedRole === 'guru');
+
+      if (userRole !== selectedRole && !isGuruCompatible) {
+        return NextResponse.json(
+          {
+            error:
+              'Akses ditolak. Akun Anda tidak memiliki izin untuk masuk melalui portal login ini. Silakan pilih portal login yang sesuai dengan peran Anda.',
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     // 6. Buat Token JWT Session
     const token = await signSessionToken({
@@ -59,7 +83,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
     });
 
-    // 7. Tentukan tujuan pengalihan (redirect) berdasarkan role
+    // 7. Tentukan tujuan pengalihan (redirect) berdasarkan role akun sebenarnya
     const redirectUrl = userRole === 'administrator' ? '/admin' : '/dashboard';
 
     // 8. Bentuk Response & Simpan Token ke HTTP-Only Cookie

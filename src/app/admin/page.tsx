@@ -23,7 +23,7 @@ export default async function AdminDashboardPage() {
     await Promise.all([
       prisma.user.count({ where: { role: 'administrator' } }),
       prisma.user.count({ where: { role: 'kepala_sekolah' } }),
-      prisma.user.count({ where: { role: 'guru' } }),
+      prisma.user.count({ where: { role: { in: ['guru', 'guru_mapel', 'guru_bk', 'wali_kelas'] } } }),
       prisma.user.count({ where: { role: 'siswa' } }),
       prisma.dailyMessage.count({ where: { is_active: true } }),
       prisma.principalProfile.findFirst(),

@@ -229,10 +229,22 @@ export default function UsersManagementPage() {
         return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">Administrator</span>;
       case 'kepala_sekolah':
         return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">Kepala Sekolah</span>;
+      case 'wakasek_kurikulum':
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-cyan-50 text-cyan-700 border border-cyan-200">Wakasek Kurikulum</span>;
+      case 'wakasek_kesiswaan':
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">Wakasek Kesiswaan</span>;
+      case 'kepala_perpustakaan':
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">Kepala Perpustakaan</span>;
+      case 'guru_mapel':
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Guru Mapel</span>;
+      case 'wali_kelas':
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">Wali Kelas</span>;
+      case 'guru_bk':
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">Guru BK</span>;
+      case 'siswa':
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">Siswa</span>;
       case 'guru':
         return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Guru</span>;
-      case 'siswa':
-        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">Siswa</span>;
       default:
         return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">{role}</span>;
     }
@@ -307,8 +319,14 @@ export default function UsersManagementPage() {
             <option value="all">Semua Role</option>
             <option value="administrator">Administrator</option>
             <option value="kepala_sekolah">Kepala Sekolah</option>
-            <option value="guru">Guru</option>
+            <option value="wakasek_kurikulum">Wakasek Kurikulum</option>
+            <option value="wakasek_kesiswaan">Wakasek Kesiswaan</option>
+            <option value="kepala_perpustakaan">Kepala Perpustakaan</option>
+            <option value="guru_mapel">Guru Mapel</option>
+            <option value="wali_kelas">Wali Kelas</option>
+            <option value="guru_bk">Guru BK</option>
             <option value="siswa">Siswa</option>
+            <option value="guru">Guru (Legacy)</option>
           </select>
         </div>
       </div>
@@ -516,7 +534,12 @@ export default function UsersManagementPage() {
                 >
                   <option value="administrator">Administrator</option>
                   <option value="kepala_sekolah">Kepala Sekolah</option>
-                  <option value="guru">Guru</option>
+                  <option value="wakasek_kurikulum">Wakasek Kurikulum</option>
+                  <option value="wakasek_kesiswaan">Wakasek Kesiswaan</option>
+                  <option value="kepala_perpustakaan">Kepala Perpustakaan</option>
+                  <option value="guru_mapel">Guru Mapel</option>
+                  <option value="wali_kelas">Wali Kelas</option>
+                  <option value="guru_bk">Guru BK</option>
                   <option value="siswa">Siswa</option>
                 </select>
               </div>

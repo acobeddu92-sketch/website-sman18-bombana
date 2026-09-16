@@ -1,4 +1,14 @@
-export type UserRole = 'administrator' | 'kepala_sekolah' | 'guru' | 'siswa';
+export type UserRole =
+  | 'administrator'
+  | 'kepala_sekolah'
+  | 'wakasek_kurikulum'
+  | 'wakasek_kesiswaan'
+  | 'kepala_perpustakaan'
+  | 'guru_mapel'
+  | 'wali_kelas'
+  | 'guru_bk'
+  | 'siswa'
+  | 'guru'; // fallback kompatibilitas
 
 export const ROLES: Record<UserRole, { label: string; dashboardUrl: string }> = {
   administrator: {
@@ -9,12 +19,36 @@ export const ROLES: Record<UserRole, { label: string; dashboardUrl: string }> = 
     label: 'Kepala Sekolah',
     dashboardUrl: '/dashboard',
   },
-  guru: {
-    label: 'Guru',
+  wakasek_kurikulum: {
+    label: 'Wakasek Kurikulum',
+    dashboardUrl: '/dashboard',
+  },
+  wakasek_kesiswaan: {
+    label: 'Wakasek Kesiswaan',
+    dashboardUrl: '/dashboard',
+  },
+  kepala_perpustakaan: {
+    label: 'Kepala Perpustakaan',
+    dashboardUrl: '/dashboard',
+  },
+  guru_mapel: {
+    label: 'Guru Mapel',
+    dashboardUrl: '/dashboard',
+  },
+  wali_kelas: {
+    label: 'Wali Kelas',
+    dashboardUrl: '/dashboard',
+  },
+  guru_bk: {
+    label: 'Guru BK',
     dashboardUrl: '/dashboard',
   },
   siswa: {
     label: 'Siswa',
+    dashboardUrl: '/dashboard',
+  },
+  guru: {
+    label: 'Guru',
     dashboardUrl: '/dashboard',
   },
 };

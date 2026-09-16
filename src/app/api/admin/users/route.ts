@@ -60,7 +60,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validRoles = ['administrator', 'kepala_sekolah', 'guru', 'siswa'];
+    const validRoles = [
+      'administrator',
+      'kepala_sekolah',
+      'wakasek_kurikulum',
+      'wakasek_kesiswaan',
+      'kepala_perpustakaan',
+      'guru_mapel',
+      'wali_kelas',
+      'guru_bk',
+      'siswa',
+      'guru',
+    ];
     if (!validRoles.includes(role)) {
       return NextResponse.json({ error: 'Role tidak valid.' }, { status: 400 });
     }

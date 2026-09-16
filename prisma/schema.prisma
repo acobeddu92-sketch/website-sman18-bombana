@@ -8,68 +8,82 @@ generator client {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   name          String
-  username      String    @unique
-  email         String    @unique
+  username      String   @unique
+  email         String   @unique
   password_hash String
-  role          String    // "administrator" | "kepala_sekolah" | "guru" | "siswa"
-  is_active     Boolean   @default(true)
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  role          String // "administrator" | "kepala_sekolah" | "wakasek_kurikulum" | "wakasek_kesiswaan" | "kepala_perpustakaan" | "guru_mapel" | "wali_kelas" | "guru_bk" | "siswa"
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relasi Modul Pembelajaran, Absensi, Piket, BK & Pelanggaran
+  student_profile      Student?
+  homeroom_classes     Class[]                   @relation("HomeroomTeacher")
+  teaching_schedules   TeachingSchedule[]
+  monthly_attendances  MonthlyAttendance[]       @relation("TeacherMonthlyAttendances")
+  verified_attendances MonthlyAttendance[]       @relation("VerifierMonthlyAttendances")
+  learning_materials   LearningMaterial[]
+  assignments          Assignment[]
+  picket_reports       PicketReport[]
+  reported_violations  PelanggaranSiswa[]        @relation("ReportedViolations")
+  handled_violations   PelanggaranSiswa[]        @relation("HandledViolations")
+  violation_follow_ups TindakLanjutPelanggaran[]
+  counseling_sessions  BimbinganBK[]
 
   @@map("users")
 }
 
 model SchoolProfile {
-  id               String    @id @default(cuid())
-  school_name      String    @default("SMA NEGERI 18 BOMBANA")
-  tagline          String?   @default("Membentuk Generasi Berkarakter, Cerdas, dan Berwawasan Lingkungan")
-  logo             String?   @default("/images/logo.svg")
-  address          String?   @default("Jl. Pendidikan No. 18, Kecamatan Poleang, Kabupaten Bombana, Sulawesi Tenggara 93772")
-  phone            String?   @default("+62 821-9988-7766")
-  email            String?   @default("info@sman18bombana.sch.id")
-  website          String?   @default("https://sman18bombana.sch.id")
+  id               String   @id @default(cuid())
+  school_name      String   @default("SMA NEGERI 18 BOMBANA")
+  tagline          String?  @default("Membentuk Generasi Berkarakter, Cerdas, dan Berwawasan Lingkungan")
+  logo             String?  @default("/images/logo.svg")
+  address          String?  @default("Jl. Pendidikan No. 18, Kecamatan Poleang, Kabupaten Bombana, Sulawesi Tenggara 93772")
+  phone            String?  @default("+62 821-9988-7766")
+  email            String?  @default("info@sman18bombana.sch.id")
+  website          String?  @default("https://sman18bombana.sch.id")
   history          String?
   vision           String?
   mission          String?
-  goals            String?   // Tujuan Sekolah
-  facilities       String?   // Fasilitas (JSON string)
-  extracurriculars String?   // Ekstrakurikuler (JSON string)
-  updated_at       DateTime  @updatedAt
+  goals            String? // Tujuan Sekolah
+  facilities       String? // Fasilitas (JSON string)
+  extracurriculars String? // Ekstrakurikuler (JSON string)
+  updated_at       DateTime @updatedAt
 
   @@map("school_profile")
 }
 
 model PrincipalProfile {
-  id         String    @id @default(cuid())
-  name       String    @default("H. Syafruddin, S.Pd., M.Pd.")
-  position   String    @default("Kepala SMA Negeri 18 Bombana")
-  photo      String?   @default("/images/kepala-sekolah.jpg")
-  message    String    @default("Mari kita jadikan sekolah sebagai tempat untuk tumbuh, belajar, berkarya, dan mempersiapkan masa depan dengan penuh optimisme dan integritas tinggi.")
-  updated_at DateTime  @updatedAt
+  id         String   @id @default(cuid())
+  name       String   @default("H. Syafruddin, S.Pd., M.Pd.")
+  position   String   @default("Kepala SMA Negeri 18 Bombana")
+  photo      String?  @default("/images/kepala-sekolah.jpg")
+  message    String   @default("Mari kita jadikan sekolah sebagai tempat untuk tumbuh, belajar, berkarya, dan mempersiapkan masa depan dengan penuh optimisme dan integritas tinggi.")
+  updated_at DateTime @updatedAt
 
   @@map("principal_profile")
 }
 
 model HomeBackground {
-  id         String    @id @default(cuid())
+  id         String   @id @default(cuid())
   image      String
-  is_active  Boolean   @default(true)
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@map("home_background")
 }
 
 model DailyMessage {
-  id         String    @id @default(cuid())
+  id         String   @id @default(cuid())
   content    String
-  category   String    // "motivasi" | "nasehat" | "pantun"
-  author     String?   @default("Anonim")
-  is_active  Boolean   @default(true)
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  category   String // "motivasi" | "nasehat" | "pantun"
+  author     String?  @default("Anonim")
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@map("daily_messages")
 }
@@ -100,27 +114,325 @@ model GalleryPhoto {
 
 // Model legacy untuk kompatibilitas jika ada query lama
 model Gallery {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String?
   image       String
-  category    String    @default("kegiatan") // "kegiatan" | "fasilitas" | "prestasi"
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
+  category    String   @default("kegiatan") // "kegiatan" | "fasilitas" | "prestasi"
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   @@map("gallery")
 }
 
 model Announcement {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   title        String
   content      String
   image        String?
-  category     String    @default("pengumuman") // "berita" | "pengumuman" | "agenda"
-  published_at DateTime  @default(now())
-  is_published Boolean   @default(true) // true = Published, false = Draft
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  category     String   @default("pengumuman") // "berita" | "pengumuman" | "agenda"
+  published_at DateTime @default(now())
+  is_published Boolean  @default(true) // true = Published, false = Draft
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
   @@map("announcements")
+}
+
+// ==========================================
+// 1. MODEL KELAS SEKOLAH
+// ==========================================
+model Class {
+  id                  String   @id @default(cuid())
+  name                String // Contoh: "X-1", "X-2", "XI-1", "XII-IPA" (tanpa @unique tunggal)
+  grade               String // "X", "XI", "XII"
+  academic_year       String   @default("2026/2027")
+  homeroom_teacher_id String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  // Relasi
+  homeroom_teacher    User?               @relation("HomeroomTeacher", fields: [homeroom_teacher_id], references: [id], onDelete: SetNull)
+  students            Student[]
+  schedules           TeachingSchedule[]
+  monthly_attendances MonthlyAttendance[]
+  learning_materials  LearningMaterial[]
+  assignments         Assignment[]
+
+  @@unique([name, academic_year])
+  @@map("classes")
+}
+
+// ==========================================
+// 2. MODEL DATA SISWA
+// ==========================================
+model Student {
+  id           String   @id @default(cuid())
+  user_id      String?  @unique // Opsional jika siswa memiliki akun login
+  nis          String?  @unique
+  nisn         String?  @unique
+  name         String
+  gender       String? // "L" | "P"
+  class_id     String?
+  parent_name  String?
+  parent_phone String? // Sensitif / Terproteksi
+  address      String?
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relasi
+  user             User?                   @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  class            Class?                  @relation(fields: [class_id], references: [id], onDelete: SetNull)
+  attendance_items MonthlyAttendanceItem[]
+  violations       PelanggaranSiswa[]
+  counselings      BimbinganBK[]
+
+  @@index([class_id])
+  @@index([name])
+  @@map("students")
+}
+
+// ==========================================
+// 3. JADWAL MENGAJAR GURU
+// ==========================================
+model TeachingSchedule {
+  id         String   @id @default(cuid())
+  teacher_id String
+  class_id   String
+  subject    String // e.g. "Matematika", "Bahasa Indonesia"
+  day        String // "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"
+  start_time String // "07:30"
+  end_time   String // "09:00"
+  room       String? // "R. Kelas X-1", "Lab Komputer"
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relasi
+  teacher User  @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
+  class   Class @relation(fields: [class_id], references: [id], onDelete: Cascade)
+
+  @@index([teacher_id])
+  @@index([class_id])
+  @@index([day])
+  @@map("teaching_schedules")
+}
+
+// ==========================================
+// 4. REKAP ABSEN BULANAN (HEADER)
+// ==========================================
+model MonthlyAttendance {
+  id                 String    @id @default(cuid())
+  year               Int // e.g. 2026
+  month              Int // 1 - 12
+  class_id           String
+  subject            String
+  teacher_id         String
+  status             String    @default("Draft") // "Draft" | "Dikirim" | "Dikembalikan" | "Diverifikasi" | "Disetujui"
+  notes              String?
+  submitted_at       DateTime?
+  verified_by_id     String? // Wakasek Kesiswaan
+  verified_at        DateTime?
+  verification_notes String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  // Relasi
+  class    Class                   @relation(fields: [class_id], references: [id], onDelete: Cascade)
+  teacher  User                    @relation("TeacherMonthlyAttendances", fields: [teacher_id], references: [id], onDelete: Cascade)
+  verifier User?                   @relation("VerifierMonthlyAttendances", fields: [verified_by_id], references: [id], onDelete: SetNull)
+  items    MonthlyAttendanceItem[]
+
+  @@unique([year, month, class_id, subject, teacher_id])
+  @@index([year, month])
+  @@index([class_id])
+  @@index([teacher_id])
+  @@index([status])
+  @@map("monthly_attendances")
+}
+
+// ==========================================
+// 5. RINCIAN REKAP ABSEN BULANAN SISWA
+// ==========================================
+model MonthlyAttendanceItem {
+  id            String   @id @default(cuid())
+  attendance_id String
+  student_id    String
+  present       Int      @default(0) // H (Hadir)
+  sick          Int      @default(0) // S (Sakit)
+  permission    Int      @default(0) // I (Izin)
+  unexcused     Int      @default(0) // A (Alpa)
+  total         Int      @default(0) // Dihitung otomatis oleh aplikasi: H + S + I + A
+  notes         String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relasi: student_id dengan onDelete Restrict (mencegah cascade delete siswa)
+  attendance MonthlyAttendance @relation(fields: [attendance_id], references: [id], onDelete: Cascade)
+  student    Student           @relation(fields: [student_id], references: [id], onDelete: Restrict)
+
+  @@unique([attendance_id, student_id])
+  @@index([attendance_id])
+  @@index([student_id])
+  @@map("monthly_attendance_items")
+}
+
+// ==========================================
+// 6. MATERI & MODUL AJAR
+// ==========================================
+model LearningMaterial {
+  id          String   @id @default(cuid())
+  teacher_id  String
+  class_id    String?
+  subject     String
+  title       String
+  description String?
+  file_url    String? // Vercel Blob / uploads folder 'materi'
+  link_url    String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relasi
+  teacher User   @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
+  class   Class? @relation(fields: [class_id], references: [id], onDelete: SetNull)
+
+  @@index([teacher_id])
+  @@index([class_id])
+  @@map("learning_materials")
+}
+
+// ==========================================
+// 7. TUGAS SISWA
+// ==========================================
+model Assignment {
+  id             String   @id @default(cuid())
+  teacher_id     String
+  class_id       String
+  subject        String
+  title          String
+  description    String
+  deadline       DateTime
+  attachment_url String?
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  // Relasi
+  teacher User  @relation(fields: [teacher_id], references: [id], onDelete: Cascade)
+  class   Class @relation(fields: [class_id], references: [id], onDelete: Cascade)
+
+  @@index([teacher_id])
+  @@index([class_id])
+  @@index([deadline])
+  @@map("assignments")
+}
+
+// ==========================================
+// 8. LAPORAN PIKET HARIAN
+// ==========================================
+model PicketReport {
+  id                       String   @id @default(cuid())
+  date                     DateTime @default(now())
+  picket_teacher_id        String
+  general_notes            String?
+  school_condition_summary String?
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+
+  // Relasi
+  picket_teacher User               @relation(fields: [picket_teacher_id], references: [id], onDelete: Cascade)
+  violations     PelanggaranSiswa[]
+
+  @@index([date])
+  @@index([picket_teacher_id])
+  @@map("picket_reports")
+}
+
+// ==========================================
+// 9. SATU DATA TERPUSAT PELANGGARAN SISWA
+// ==========================================
+model PelanggaranSiswa {
+  id                String    @id @default(cuid())
+  student_id        String
+  class_at_incident String // Kelas saat kejadian, e.g. "X-1"
+  date              DateTime  @default(now())
+  time              String? // e.g. "07:15 WITA"
+  violation_type    String // "Kedisiplinan", "Atribut", "Keterlambatan", "Perilaku", dll.
+  description       String // Uraian/kronologi kejadian
+  location          String? // e.g. "Gerbang Sekolah", "Kantin", "Ruang Kelas"
+  reporter_id       String // PELAPOR (Guru Piket / Guru Mapel)
+  initial_action    String? // Tindak lanjut awal oleh pelapor
+  handling_notes    String? // Penanganan kasus
+  status            String    @default("Dilaporkan") // "Dilaporkan" | "Dalam Penanganan" | "Perlu Tindak Lanjut" | "Selesai"
+  handler_id        String? // PENANGANI (Guru BK / Wakasek Kesiswaan)
+  resolution_date   DateTime? // Tanggal penyelesaian kasus
+  notes             String?
+  picket_report_id  String? // Relasi ke laporan piket jika ada
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  // Relasi: student_id dengan onDelete Restrict (mencegah cascade delete siswa)
+  student       Student                   @relation(fields: [student_id], references: [id], onDelete: Restrict)
+  reporter      User                      @relation("ReportedViolations", fields: [reporter_id], references: [id], onDelete: Restrict)
+  handler       User?                     @relation("HandledViolations", fields: [handler_id], references: [id], onDelete: SetNull)
+  picket_report PicketReport?             @relation(fields: [picket_report_id], references: [id], onDelete: SetNull)
+  follow_ups    TindakLanjutPelanggaran[]
+
+  @@index([student_id])
+  @@index([reporter_id])
+  @@index([handler_id])
+  @@index([status])
+  @@index([date])
+  @@map("pelanggaran_siswa")
+}
+
+// ==========================================
+// 10. TINDAK LANJUT PELANGGARAN
+// ==========================================
+model TindakLanjutPelanggaran {
+  id           String   @id @default(cuid())
+  violation_id String
+  action_date  DateTime @default(now())
+  actor_id     String // Petugas yang mengambil tindakan
+  action_taken String // "Panggilan Orang Tua", "Bimbingan Khusus", "Surat Peringatan", dll.
+  notes        String?
+  status_after String // Status kasus setelah tindakan
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relasi
+  violation PelanggaranSiswa @relation(fields: [violation_id], references: [id], onDelete: Cascade)
+  actor     User             @relation(fields: [actor_id], references: [id], onDelete: Restrict)
+
+  @@index([violation_id])
+  @@index([actor_id])
+  @@map("tindak_lanjut_pelanggaran")
+}
+
+// ==========================================
+// 11. BIMBINGAN & KONSELING (BK)
+// ==========================================
+model BimbinganBK {
+  id                String   @id @default(cuid())
+  student_id        String
+  counselor_id      String // Guru BK
+  date              DateTime @default(now())
+  guidance_type     String // "Pribadi" | "Sosial" | "Belajar" | "Karir"
+  problem_statement String // Pokok permasalahan
+  counseling_result String // Hasil konseling
+  recommendation    String? // Rekomendasi
+  follow_up         String? // Tindak lanjut
+  status            String   @default("Proses") // "Proses" | "Selesai" | "Rujukan"
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relasi: student_id dengan onDelete Restrict (mencegah cascade delete siswa)
+  student   Student @relation(fields: [student_id], references: [id], onDelete: Restrict)
+  counselor User    @relation(fields: [counselor_id], references: [id], onDelete: Restrict)
+
+  @@index([student_id])
+  @@index([counselor_id])
+  @@index([date])
+  @@index([status])
+  @@map("bimbingan_bk")
 }

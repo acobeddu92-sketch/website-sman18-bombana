@@ -6,6 +6,7 @@ import { AUTH_COOKIE_NAME } from '@/lib/constants';
 import { prisma } from '@/lib/prisma';
 import PrincipalView from '@/components/dashboard/PrincipalView';
 import TeacherView from '@/components/dashboard/TeacherView';
+import BKView from '@/components/dashboard/BKView';
 import StudentView from '@/components/dashboard/StudentView';
 
 export const dynamic = 'force-dynamic';
@@ -83,7 +84,7 @@ export default async function DashboardPage() {
         teachers,
         students,
       ] = await Promise.all([
-        prisma.user.count({ where: { role: 'guru', is_active: true } }),
+        prisma.user.count({ where: { role: { in: ['guru', 'guru_mapel', 'guru_bk', 'wali_kelas'] }, is_active: true } }),
         prisma.user.count({ where: { role: 'siswa', is_active: true } }),
         prisma.announcement.count({ where: { is_published: true } }),
         prisma.schoolProfile.findFirst(),
@@ -98,7 +99,7 @@ export default async function DashboardPage() {
           take: 12,
         }),
         prisma.user.findMany({
-          where: { role: 'guru' },
+          where: { role: { in: ['guru', 'guru_mapel', 'guru_bk', 'wali_kelas'] } },
           select: { id: true, name: true, email: true, username: true, is_active: true, created_at: true },
           orderBy: { name: 'asc' },
         }),
@@ -168,7 +169,11 @@ export default async function DashboardPage() {
     return <PrincipalView user={currentUser} data={dashboardData} />;
   }
 
-  if (session.role === 'guru') {
+  if (session.role === 'guru_bk') {
+    return <BKView user={currentUser} />;
+  }
+
+  if (session.role === 'guru_mapel' || session.role === 'guru') {
     return <TeacherView user={currentUser} />;
   }
 

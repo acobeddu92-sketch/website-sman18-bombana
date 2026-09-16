@@ -14,6 +14,7 @@ import {
   Users,
   Library,
   UserCheck,
+  HeartHandshake,
   Backpack,
 } from 'lucide-react';
 import SafeImage from '@/components/ui/SafeImage';
@@ -65,6 +66,12 @@ const LOGIN_ROLES = [
     label: 'Login sebagai Wali Kelas',
     href: '/login?role=wali_kelas',
     icon: UserCheck,
+  },
+  {
+    role: 'guru_bk',
+    label: 'Login sebagai Guru BK',
+    href: '/login?role=guru_bk',
+    icon: HeartHandshake,
   },
   {
     role: 'siswa',
