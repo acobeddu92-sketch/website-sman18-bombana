@@ -120,10 +120,11 @@ export default function Navbar({
   }, [pathname]);
 
   const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Profil Sekolah', href: '/profil' },
-    { name: 'Gallery', href: '/galeri' },
-    { name: 'Informasi Umum', href: '/informasi' },
+    { name: 'Beranda', href: '/' },
+    { name: 'Profil', href: '/profil' },
+    { name: 'Galeri', href: '/galeri' },
+    { name: 'Informasi', href: '/informasi' },
+    { name: 'PPDB', href: '/ppdb' },
   ];
 
   return (
@@ -159,7 +160,9 @@ export default function Navbar({
           {/* Navigasi Desktop */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href;
+              const isActive =
+                pathname === link.href ||
+                (link.href !== '/' && pathname.startsWith(link.href));
               return (
                 <a
                   key={link.name}
@@ -239,7 +242,9 @@ export default function Navbar({
         {isOpen && (
           <div className="md:hidden mt-3 pt-3 border-t border-slate-100 pb-4 space-y-2 animate-fadeIn max-h-[calc(100vh-90px)] overflow-y-auto">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href;
+              const isActive =
+                pathname === link.href ||
+                (link.href !== '/' && pathname.startsWith(link.href));
               return (
                 <a
                   key={link.name}

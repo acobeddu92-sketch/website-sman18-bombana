@@ -1,0 +1,18 @@
+{
+  "registrationUrl": "",
+  "registrationStatus": "coming_soon",
+  "academicYear": "2026/2027",
+  "startDate": "2026-06-15",
+  "endDate": "2026-07-10",
+  "announcementDate": "2026-07-15",
+  "reRegistrationDate": "2026-07-16 s/d 2026-07-20",
+  "contactPhone": "+62 821-9988-7766",
+  "contactEmail": "ppdb@sman18bombana.sch.id",
+  "notes": "Pendaftaran PPDB SMA Negeri 18 Bombana Tahun Ajaran 2026/2027 dapat dilakukan secara daring maupun langsung di sekretariat panitia sekolah.",
+  "quotas": {
+    "zonasi": 50,
+    "afirmasi": 15,
+    "prestasi": 30,
+    "perpindahan": 5
+  }
+}

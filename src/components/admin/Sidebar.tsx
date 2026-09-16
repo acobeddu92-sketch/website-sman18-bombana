@@ -41,6 +41,7 @@ export default function Sidebar({ isOpen, onClose, adminUser, logo }: SidebarPro
     { name: 'Profil Sekolah', href: '/admin/profil', icon: School },
     { name: 'Gallery', href: '/admin/galeri', icon: ImageIcon },
     { name: 'Informasi Umum', href: '/admin/informasi', icon: Bell },
+    { name: 'PPDB', href: '/admin/ppdb', icon: GraduationCap },
     { name: 'Pengaturan', href: '/admin/pengaturan', icon: Settings },
   ];
 
