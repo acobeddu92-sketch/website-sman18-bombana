@@ -16,6 +16,8 @@ import {
   UserCheck,
   HeartHandshake,
   Backpack,
+  Flame,
+  Compass,
 } from 'lucide-react';
 import SafeImage from '@/components/ui/SafeImage';
 
@@ -72,6 +74,18 @@ const LOGIN_ROLES = [
     label: 'Login sebagai Guru BK',
     href: '/login?role=guru_bk',
     icon: HeartHandshake,
+  },
+  {
+    role: 'pembina_osis',
+    label: 'Login sebagai Pembina OSIS',
+    href: '/login?role=pembina_osis',
+    icon: Flame,
+  },
+  {
+    role: 'pembina_pramuka',
+    label: 'Login sebagai Pembina Pramuka',
+    href: '/login?role=pembina_pramuka',
+    icon: Compass,
   },
   {
     role: 'siswa',

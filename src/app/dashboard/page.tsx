@@ -8,6 +8,7 @@ import PrincipalView from '@/components/dashboard/PrincipalView';
 import TeacherView from '@/components/dashboard/TeacherView';
 import BKView from '@/components/dashboard/BKView';
 import StudentView from '@/components/dashboard/StudentView';
+import PembinaView from '@/components/dashboard/PembinaView';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,10 +83,10 @@ export default async function DashboardPage() {
         announcements,
         galleryAlbums,
         teachers,
-        students,
+        rawStudents,
       ] = await Promise.all([
         prisma.user.count({ where: { role: { in: ['guru', 'guru_mapel', 'guru_bk', 'wali_kelas'] }, is_active: true } }),
-        prisma.user.count({ where: { role: 'siswa', is_active: true } }),
+        prisma.student.count({ where: { is_active: true } }),
         prisma.announcement.count({ where: { is_published: true } }),
         prisma.schoolProfile.findFirst(),
         prisma.principalProfile.findFirst(),
@@ -103,13 +104,22 @@ export default async function DashboardPage() {
           select: { id: true, name: true, email: true, username: true, is_active: true, created_at: true },
           orderBy: { name: 'asc' },
         }),
-        prisma.user.findMany({
-          where: { role: 'siswa' },
-          select: { id: true, name: true, email: true, username: true, is_active: true, created_at: true },
+        prisma.student.findMany({
+          where: { is_active: true },
+          include: { class: true },
           orderBy: { name: 'asc' },
           take: 100,
         }),
       ]);
+
+      const students = rawStudents.map((s) => ({
+        id: s.id,
+        name: s.name,
+        username: s.nisn || s.nis || 'siswa',
+        email: s.class ? `Kelas ${s.class.name}` : '-',
+        is_active: s.is_active,
+        created_at: s.created_at,
+      }));
 
       const totalActivities =
         galleryAlbums.reduce((acc, curr) => acc + (curr.photos?.length || 0), 0) +
@@ -173,7 +183,24 @@ export default async function DashboardPage() {
     return <BKView user={currentUser} />;
   }
 
-  if (session.role === 'guru_mapel' || session.role === 'guru') {
+  if (session.role === 'pembina_osis') {
+    return <PembinaView user={currentUser} type="osis" />;
+  }
+
+  if (session.role === 'pembina_pramuka') {
+    return <PembinaView user={currentUser} type="pramuka" />;
+  }
+
+  if (
+    [
+      'guru_mapel',
+      'guru',
+      'wali_kelas',
+      'wakasek_kurikulum',
+      'wakasek_kesiswaan',
+      'kepala_perpustakaan',
+    ].includes(session.role)
+  ) {
     return <TeacherView user={currentUser} />;
   }
 

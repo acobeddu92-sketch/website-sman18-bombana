@@ -7,6 +7,8 @@ export type UserRole =
   | 'guru_mapel'
   | 'wali_kelas'
   | 'guru_bk'
+  | 'pembina_osis'
+  | 'pembina_pramuka'
   | 'siswa'
   | 'guru'; // fallback kompatibilitas
 
@@ -41,6 +43,14 @@ export const ROLES: Record<UserRole, { label: string; dashboardUrl: string }> = 
   },
   guru_bk: {
     label: 'Guru BK',
+    dashboardUrl: '/dashboard',
+  },
+  pembina_osis: {
+    label: 'Pembina OSIS',
+    dashboardUrl: '/dashboard',
+  },
+  pembina_pramuka: {
+    label: 'Pembina Pramuka',
     dashboardUrl: '/dashboard',
   },
   siswa: {

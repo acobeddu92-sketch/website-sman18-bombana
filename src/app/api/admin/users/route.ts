@@ -69,6 +69,8 @@ export async function POST(request: NextRequest) {
       'guru_mapel',
       'wali_kelas',
       'guru_bk',
+      'pembina_osis',
+      'pembina_pramuka',
       'siswa',
       'guru',
     ];

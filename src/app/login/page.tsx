@@ -24,6 +24,8 @@ const ROLE_NAMES: Record<string, string> = {
   guru_mapel: 'Guru Mapel',
   wali_kelas: 'Wali Kelas',
   guru_bk: 'Guru BK',
+  pembina_osis: 'Pembina OSIS',
+  pembina_pramuka: 'Pembina Pramuka',
   siswa: 'Siswa',
 };
 
@@ -178,6 +180,8 @@ function LoginForm() {
               <option value="guru_mapel">Guru Mapel</option>
               <option value="wali_kelas">Wali Kelas</option>
               <option value="guru_bk">Guru BK</option>
+              <option value="pembina_osis">Pembina OSIS</option>
+              <option value="pembina_pramuka">Pembina Pramuka</option>
               <option value="siswa">Siswa</option>
             </select>
           </div>

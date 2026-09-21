@@ -241,6 +241,10 @@ export default function UsersManagementPage() {
         return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">Wali Kelas</span>;
       case 'guru_bk':
         return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">Guru BK</span>;
+      case 'pembina_osis':
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">Pembina OSIS</span>;
+      case 'pembina_pramuka':
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300">Pembina Pramuka</span>;
       case 'siswa':
         return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">Siswa</span>;
       case 'guru':
@@ -325,6 +329,8 @@ export default function UsersManagementPage() {
             <option value="guru_mapel">Guru Mapel</option>
             <option value="wali_kelas">Wali Kelas</option>
             <option value="guru_bk">Guru BK</option>
+            <option value="pembina_osis">Pembina OSIS</option>
+            <option value="pembina_pramuka">Pembina Pramuka</option>
             <option value="siswa">Siswa</option>
             <option value="guru">Guru (Legacy)</option>
           </select>
@@ -540,6 +546,8 @@ export default function UsersManagementPage() {
                   <option value="guru_mapel">Guru Mapel</option>
                   <option value="wali_kelas">Wali Kelas</option>
                   <option value="guru_bk">Guru BK</option>
+                  <option value="pembina_osis">Pembina OSIS</option>
+                  <option value="pembina_pramuka">Pembina Pramuka</option>
                   <option value="siswa">Siswa</option>
                 </select>
               </div>

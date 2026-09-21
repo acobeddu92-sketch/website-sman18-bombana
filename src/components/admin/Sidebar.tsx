@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
+  UserCheck,
   Home,
   MessageSquareQuote,
   School,
@@ -36,6 +37,7 @@ export default function Sidebar({ isOpen, onClose, adminUser, logo }: SidebarPro
   const menuItems = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Data Siswa', href: '/admin/siswa', icon: UserCheck },
     { name: 'Beranda', href: '/admin/beranda', icon: Home },
     { name: 'Kata-Kata Harian', href: '/admin/kata-harian', icon: MessageSquareQuote },
     { name: 'Profil Sekolah', href: '/admin/profil', icon: School },

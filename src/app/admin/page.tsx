@@ -24,7 +24,7 @@ export default async function AdminDashboardPage() {
       prisma.user.count({ where: { role: 'administrator' } }),
       prisma.user.count({ where: { role: 'kepala_sekolah' } }),
       prisma.user.count({ where: { role: { in: ['guru', 'guru_mapel', 'guru_bk', 'wali_kelas'] } } }),
-      prisma.user.count({ where: { role: 'siswa' } }),
+      prisma.student.count({ where: { is_active: true } }),
       prisma.dailyMessage.count({ where: { is_active: true } }),
       prisma.principalProfile.findFirst(),
       prisma.galleryAlbum.count(),
