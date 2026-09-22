@@ -72,6 +72,7 @@ export default async function DashboardPage() {
       galleryAlbums: [] as any[],
       teachers: [] as any[],
       students: [] as any[],
+      classes: [] as any[],
     };
 
     try {
@@ -79,16 +80,19 @@ export default async function DashboardPage() {
         totalTeachers,
         totalStudents,
         totalAnnouncements,
+        totalWaliKelas,
         schoolProfile,
         principalProfile,
         announcements,
         galleryAlbums,
         teachers,
         rawStudents,
+        rawClasses,
       ] = await Promise.all([
         prisma.user.count({ where: { role: { in: ['guru', 'guru_mapel', 'guru_bk', 'wali_kelas'] }, is_active: true } }),
         prisma.student.count({ where: { is_active: true } }),
         prisma.announcement.count({ where: { is_published: true } }),
+        prisma.class.count({ where: { homeroom_teacher_id: { not: null } } }),
         prisma.schoolProfile.findFirst(),
         prisma.principalProfile.findFirst(),
         prisma.announcement.findMany({
@@ -111,6 +115,13 @@ export default async function DashboardPage() {
           orderBy: { name: 'asc' },
           take: 100,
         }),
+        prisma.class.findMany({
+          include: {
+            homeroom_teacher: { select: { id: true, name: true } },
+            _count: { select: { students: { where: { is_active: true } } } },
+          },
+          orderBy: [{ grade: 'asc' }, { name: 'asc' }],
+        }),
       ]);
 
       const students = rawStudents.map((s) => ({
@@ -126,8 +137,6 @@ export default async function DashboardPage() {
         galleryAlbums.reduce((acc, curr) => acc + (curr.photos?.length || 0), 0) +
         announcements.filter((a) => a.category === 'agenda').length;
 
-      const totalWaliKelas = Math.min(totalTeachers, 6);
-
       dashboardData = {
         stats: {
           totalTeachers,
@@ -136,6 +145,14 @@ export default async function DashboardPage() {
           totalActivities,
           totalAnnouncements,
         },
+        classes: rawClasses.map((c) => ({
+          id: c.id,
+          name: c.name,
+          grade: c.grade,
+          academic_year: c.academic_year,
+          homeroom_teacher: c.homeroom_teacher,
+          studentsCount: c._count?.students || 0,
+        })),
         schoolProfile: schoolProfile
           ? {
               ...schoolProfile,

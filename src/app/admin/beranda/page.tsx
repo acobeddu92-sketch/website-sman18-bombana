@@ -60,8 +60,8 @@ export default function PengaturanBerandaPage() {
           setTagline(data.school.tagline || '');
         }
         if (data.principal) {
-          setPrincipalName(data.principal.name || '');
-          setPrincipalPosition(data.principal.position || '');
+          setPrincipalName(data.activePrincipal?.name || data.principal.name || 'Belum ditetapkan');
+          setPrincipalPosition(data.principal.position || 'Kepala SMA Negeri 18 Bombana');
           setPrincipalPhoto(data.principal.photo || '');
           setPrincipalMessage(data.principal.message || '');
         }
@@ -453,16 +453,23 @@ export default function PengaturanBerandaPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Nama Lengkap &amp; Gelar
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-700">
+                  Nama Lengkap &amp; Gelar
+                </label>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  Sumber: User (Read-Only)
+                </span>
+              </div>
               <input
                 type="text"
-                required
+                readOnly
                 value={principalName}
-                onChange={(e) => setPrincipalName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-700 text-sm font-medium cursor-not-allowed focus:outline-none"
               />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Nama disinkronkan otomatis dari User aktif role Kepala Sekolah. Kelola di <strong>Admin &gt; Manajemen Pengguna</strong>.
+              </p>
             </div>
 
             <div>

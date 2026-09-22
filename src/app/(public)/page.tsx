@@ -1,6 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { getDailyMessage } from '@/lib/daily-message';
+import { getActivePrincipal } from '@/lib/principal';
 import SafeImage from '@/components/ui/SafeImage';
 import HomeScrollManager from '@/components/public/HomeScrollManager';
 import {
@@ -26,17 +27,21 @@ export default async function HomePage() {
   let schoolProfile = null;
   let principalProfile = null;
   let homeBackground = null;
+  let activePrincipal = null;
 
   try {
-    schoolProfile = await prisma.schoolProfile.findFirst();
-    principalProfile = await prisma.principalProfile.findFirst();
-    homeBackground = await prisma.homeBackground.findFirst({
-      where: {
-        is_active: true,
-        NOT: { image: '' },
-      },
-      orderBy: { updated_at: 'desc' },
-    });
+    [schoolProfile, principalProfile, homeBackground, activePrincipal] = await Promise.all([
+      prisma.schoolProfile.findFirst(),
+      prisma.principalProfile.findFirst(),
+      prisma.homeBackground.findFirst({
+        where: {
+          is_active: true,
+          NOT: { image: '' },
+        },
+        orderBy: { updated_at: 'desc' },
+      }),
+      getActivePrincipal(),
+    ]);
   } catch (err) {
     console.error('Database query error in HomePage:', err);
   }
@@ -90,7 +95,7 @@ export default async function HomePage() {
   const tagline =
     schoolProfile?.tagline ||
     'Membentuk Generasi Berkarakter, Cerdas, dan Berwawasan Lingkungan.';
-  const principalName = principalProfile?.name || 'H. Syafruddin, S.Pd., M.Pd.';
+  const principalName = activePrincipal?.name || 'Belum ditetapkan';
   const principalPosition =
     principalProfile?.position || 'Kepala SMA Negeri 18 Bombana';
   const principalMessage =

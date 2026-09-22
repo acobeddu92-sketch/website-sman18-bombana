@@ -10,7 +10,7 @@ interface PrincipalProps {
 }
 
 export default function PrincipalSection({
-  name = 'H. Syafruddin, S.Pd., M.Pd.',
+  name = 'Belum ditetapkan',
   position = 'Kepala SMA Negeri 18 Bombana',
   message = 'Mari kita jadikan sekolah sebagai tempat untuk tumbuh, belajar, berkarya, dan mempersiapkan masa depan.',
   photo = '/images/kepala-sekolah.jpg',

@@ -60,6 +60,7 @@ interface Props {
     galleryAlbums: any[];
     teachers: any[];
     students: any[];
+    classes?: any[];
   };
 }
 
@@ -89,49 +90,8 @@ export default function PrincipalView({ user, data }: Props) {
   const [announcementFilter, setAnnouncementFilter] = useState('semua');
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any | null>(null);
 
-  // Approval flow simulation state
-  const [approvals, setApprovals] = useState([
-    {
-      id: 'app-1',
-      title: 'Laporan Pembelajaran & Jurnal Mengajar Pekan Ke-2',
-      submitter: 'Drs. Muh. Ilham, M.Pd.',
-      role: 'Guru Fisika',
-      date: '14 September 2026',
-      status: 'pending', // 'pending' | 'approved' | 'rejected'
-      summary: 'Target capaian KD 3.2 selesai 100%. Terdapat 3 siswa yang memerlukan pengayaan materi kinematika.',
-      feedback: '',
-    },
-    {
-      id: 'app-2',
-      title: 'Laporan Perkembangan Karakter & Presensi Rombel X-1',
-      submitter: 'Siti Rahmawati, S.Pd.',
-      role: 'Wali Kelas X-1',
-      date: '12 September 2026',
-      status: 'pending',
-      summary: 'Kehadiran kelas mencapai 98.4%. Seluruh siswa aktif mengikuti kegiatan piket kebersihan adiwiyata kelas.',
-      feedback: '',
-    },
-    {
-      id: 'app-3',
-      title: 'Proposal & Anggaran Kegiatan Pekan Olahraga & Seni (Porseni)',
-      submitter: 'Ahmad Fauzi, S.Pd.',
-      role: 'Wakasek Kesiswaan',
-      date: '10 September 2026',
-      status: 'approved',
-      summary: 'Rencana pelaksanaan porseni antar kelas menyambut HUT Sekolah dengan 8 cabang lomba.',
-      feedback: 'Disetujui. Pastikan koordinasi dengan tim keamanan dan fasilitas kebersihan.',
-    },
-    {
-      id: 'app-4',
-      title: 'Rencana Pelaksanaan Aksi Bersih Pesisir & Penanaman Mangrove',
-      submitter: 'Hasanuddin, S.Si.',
-      role: 'Koordinator Adiwiyata',
-      date: '08 September 2026',
-      status: 'approved',
-      summary: 'Agenda lingkungan pelestarian pesisir Poleang melibatkan 120 siswa kelas XI.',
-      feedback: 'Sangat baik. Prioritaskan keselamatan siswa selama di pesisir.',
-    },
-  ]);
+  // Approval flow: Dokumen & laporan menunggu supervisi Kepala Sekolah
+  const [approvals, setApprovals] = useState<any[]>([]);
 
   const [approvalModalItem, setApprovalModalItem] = useState<any | null>(null);
   const [approvalFeedback, setApprovalFeedback] = useState('');
@@ -144,7 +104,16 @@ export default function PrincipalView({ user, data }: Props) {
   const [passMsg, setPassMsg] = useState({ type: '', text: '' });
   const [passLoading, setPassLoading] = useState(false);
 
-  const { stats, schoolProfile, principalProfile, announcements, galleryAlbums, teachers, students } = data;
+  const { stats, schoolProfile, principalProfile, announcements, galleryAlbums, teachers, students, classes = [] } = data;
+
+  // Rekapitulasi per tingkat kelas
+  const kelasX = classes.filter((c: any) => c.grade === 10 || c.name?.startsWith('X-') || c.name?.startsWith('X '));
+  const kelasXI = classes.filter((c: any) => c.grade === 11 || c.name?.startsWith('XI-') || c.name?.startsWith('XI '));
+  const kelasXII = classes.filter((c: any) => c.grade === 12 || c.name?.startsWith('XII-') || c.name?.startsWith('XII '));
+
+  const countSiswaX = kelasX.reduce((acc: number, c: any) => acc + (c.studentsCount || 0), 0);
+  const countSiswaXI = kelasXI.reduce((acc: number, c: any) => acc + (c.studentsCount || 0), 0);
+  const countSiswaXII = kelasXII.reduce((acc: number, c: any) => acc + (c.studentsCount || 0), 0);
 
   // Handler Password
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -243,7 +212,7 @@ export default function PrincipalView({ user, data }: Props) {
     { id: 'profil', label: 'Profil Sekolah', icon: School, badge: 'Read Only' },
     { id: 'guru', label: 'Guru & Tendik', icon: Users, badge: 'Read Only' },
     { id: 'siswa', label: 'Siswa', icon: GraduationCap, badge: 'Read Only' },
-    { id: 'kegiatan', label: 'Kegiatan Sekolah', icon: CalendarCheck },
+    { id: 'kegiatan', label: 'Dokumentasi Kegiatan', icon: CalendarCheck },
     { id: 'pengumuman', label: 'Pengumuman', icon: Megaphone },
     {
       id: 'laporan',
@@ -253,7 +222,7 @@ export default function PrincipalView({ user, data }: Props) {
       submenus: [
         { id: 'laporan-guru', label: 'Laporan Guru', icon: FileSpreadsheet },
         { id: 'laporan-wali', label: 'Laporan Wali Kelas', icon: ClipboardList },
-        { id: 'laporan-kegiatan', label: 'Laporan Kegiatan', icon: Activity },
+        { id: 'laporan-kegiatan', label: 'Dokumentasi Kegiatan', icon: Activity },
         { id: 'laporan-rekap', label: 'Rekap Sekolah', icon: BarChart3 },
       ],
     },
@@ -263,7 +232,7 @@ export default function PrincipalView({ user, data }: Props) {
       icon: CheckSquare,
       badgeCount: pendingApprovalsCount,
     },
-    { id: 'notifikasi', label: 'Notifikasi', icon: Bell, badgeCount: 3 },
+    { id: 'notifikasi', label: 'Notifikasi', icon: Bell, badgeCount: announcements.length > 0 ? announcements.length : undefined },
     { id: 'pengaturan', label: 'Pengaturan Akun', icon: Settings },
   ];
 
@@ -564,7 +533,7 @@ export default function PrincipalView({ user, data }: Props) {
                 <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:border-emerald-300 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Kegiatan & Agenda
+                      Dokumentasi & Agenda
                     </span>
                     <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
                       <CalendarCheck className="w-4 h-4" />
@@ -573,7 +542,7 @@ export default function PrincipalView({ user, data }: Props) {
                   <div className="text-2xl sm:text-3xl font-extrabold text-slate-900">
                     {stats.totalActivities}
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-1">Dokumentasi & agenda</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Total album dokumentasi & agenda</p>
                 </div>
               </div>
 
@@ -643,40 +612,29 @@ export default function PrincipalView({ user, data }: Props) {
                       onClick={() => setActiveTab('kegiatan')}
                       className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
                     >
-                      Kelola Kegiatan
+                      Lihat Dokumentasi
                     </button>
                   </div>
 
                   <div className="space-y-3">
-                    <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-100">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-emerald-800">Rapat Dewan Guru & Kurikulum</span>
-                        <span className="text-[10px] font-bold text-emerald-600">Kamis, 18 Sep</span>
+                    {announcements.filter((a) => a.category === 'agenda').slice(0, 3).map((ag) => (
+                      <div key={ag.id} className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-emerald-800">{ag.title}</span>
+                          <span className="text-[10px] font-bold text-emerald-600">
+                            {new Date(ag.published_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1 line-clamp-2">
+                          {ag.content}
+                        </p>
                       </div>
-                      <p className="text-xs text-slate-600 mt-1">
-                        Evaluasi implementasi P5 Kurikulum Merdeka dan persiapan asesmen sumatif tengah semester.
+                    ))}
+                    {announcements.filter((a) => a.category === 'agenda').length === 0 && (
+                      <p className="text-xs text-slate-400 py-4 text-center">
+                        Belum ada agenda sekolah terjadwal.
                       </p>
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl bg-teal-50/60 border border-teal-100">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-teal-800">Supervisi Pembelajaran Kelas X</span>
-                        <span className="text-[10px] font-bold text-teal-600">Senin, 22 Sep</span>
-                      </div>
-                      <p className="text-xs text-slate-600 mt-1">
-                        Kunjungan kelas dan supervisi perangkat ajar guru mata pelajaran IPA dan Matematika.
-                      </p>
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-blue-800">Aksi Bersih Lingkungan Adiwiyata</span>
-                        <span className="text-[10px] font-bold text-blue-600">Jumat, 26 Sep</span>
-                      </div>
-                      <p className="text-xs text-slate-600 mt-1">
-                        Kerja bakti pemilahan sampah organik dan pemeliharaan taman toga sekolah bersama siswa.
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -691,15 +649,15 @@ export default function PrincipalView({ user, data }: Props) {
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3">
                     <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-slate-800">Kehadiran Harian Siswa</p>
-                      <p className="text-slate-500 mt-0.5">Tingkat kehadiran siswa pekan ini mencapai 97.8%.</p>
+                      <p className="font-bold text-slate-800">Master Data Siswa</p>
+                      <p className="text-slate-500 mt-0.5">{stats.totalStudents} siswa terdaftar aktif dalam database.</p>
                     </div>
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3">
                     <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-slate-800">KBM & Kurikulum</p>
-                      <p className="text-slate-500 mt-0.5">Seluruh rombel aktif melaksanakan KBM sesuai jadwal.</p>
+                      <p className="font-bold text-slate-800">Tenaga Pendidik</p>
+                      <p className="text-slate-500 mt-0.5">{stats.totalTeachers} guru pengajar terverifikasi aktif.</p>
                     </div>
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3">
@@ -758,7 +716,7 @@ export default function PrincipalView({ user, data }: Props) {
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
                     <span className="text-[11px] font-bold text-slate-400 block uppercase">Kepala Sekolah</span>
                     <span className="font-bold text-emerald-800 mt-0.5 block">
-                      {principalProfile?.name || user.name}
+                      {user.name}
                     </span>
                   </div>
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
@@ -858,7 +816,7 @@ export default function PrincipalView({ user, data }: Props) {
                 <div className="p-6 rounded-2xl bg-emerald-50/40 border border-emerald-100 flex flex-col items-center text-center space-y-4">
                   <div className="p-3 rounded-xl bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-xs max-w-xs w-full">
                     KEPALA SEKOLAH<br />
-                    <span className="text-emerald-200 font-normal text-xs">{principalProfile?.name || user.name}</span>
+                    <span className="text-emerald-200 font-normal text-xs">{user.name}</span>
                   </div>
                   <div className="w-0.5 h-4 bg-emerald-300" />
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl text-xs">
@@ -1002,22 +960,34 @@ export default function PrincipalView({ user, data }: Props) {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
                     Tingkat Kelas X
                   </span>
-                  <div className="text-2xl font-extrabold text-slate-900 mt-1">Fase E</div>
-                  <p className="text-xs text-slate-500 mt-0.5">Rombel X-1 dan X-2</p>
+                  <div className="text-2xl font-extrabold text-slate-900 mt-1">
+                    {countSiswaX > 0 ? `${countSiswaX} Siswa` : `${kelasX.length} Rombel`}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {kelasX.length > 0 ? kelasX.map((c: any) => c.name).join(', ') : 'Belum ada rombel kelas X'}
+                  </p>
                 </div>
                 <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 block">
                     Tingkat Kelas XI
                   </span>
-                  <div className="text-2xl font-extrabold text-slate-900 mt-1">Fase F</div>
-                  <p className="text-xs text-slate-500 mt-0.5">Rombel XI-1 dan XI-2</p>
+                  <div className="text-2xl font-extrabold text-slate-900 mt-1">
+                    {countSiswaXI > 0 ? `${countSiswaXI} Siswa` : `${kelasXI.length} Rombel`}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {kelasXI.length > 0 ? kelasXI.map((c: any) => c.name).join(', ') : 'Belum ada rombel kelas XI'}
+                  </p>
                 </div>
                 <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 block">
                     Tingkat Kelas XII
                   </span>
-                  <div className="text-2xl font-extrabold text-slate-900 mt-1">Persiapan Kelulusan</div>
-                  <p className="text-xs text-slate-500 mt-0.5">Rombel XII MIPA & IPS</p>
+                  <div className="text-2xl font-extrabold text-slate-900 mt-1">
+                    {countSiswaXII > 0 ? `${countSiswaXII} Siswa` : `${kelasXII.length} Rombel`}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {kelasXII.length > 0 ? kelasXII.map((c: any) => c.name).join(', ') : 'Belum ada rombel kelas XII'}
+                  </p>
                 </div>
               </div>
 
@@ -1084,15 +1054,15 @@ export default function PrincipalView({ user, data }: Props) {
             </div>
           )}
 
-          {/* TAB 5: KEGIATAN SEKOLAH */}
+          {/* TAB 5: DOKUMENTASI KEGIATAN */}
           {activeTab === 'kegiatan' && (
             <div className="space-y-6 animate-fadeIn">
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                  Agenda & Dokumentasi Kegiatan Sekolah
+                  Dokumentasi Kegiatan Sekolah
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Pemantauan aktivitas akademik, kesiswaan, dan pelestarian lingkungan Green School.
+                  Pemantauan album dokumentasi aktivitas akademik, kesiswaan, dan pelestarian lingkungan Green School.
                 </p>
               </div>
 
@@ -1127,12 +1097,12 @@ export default function PrincipalView({ user, data }: Props) {
                           </div>
                         )}
                         <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-black/60 text-white text-[10px] font-bold backdrop-blur-xs">
-                          {album.photos?.length || 0} Foto
+                          {album.photos?.length || 0} Foto Dokumentasi
                         </span>
                       </div>
                       <div className="p-4 space-y-1.5">
                         <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
-                          Kegiatan Sekolah
+                          Dokumentasi Kegiatan
                         </span>
                         <h5 className="font-bold text-slate-800 text-sm line-clamp-1">{album.title}</h5>
                         <p className="text-xs text-slate-500 line-clamp-2">{album.description || 'Tidak ada keterangan.'}</p>
@@ -1141,7 +1111,7 @@ export default function PrincipalView({ user, data }: Props) {
                   ))}
                   {galleryAlbums.length === 0 && (
                     <p className="col-span-3 py-8 text-center text-slate-400 text-xs">
-                      Belum ada album dokumentasi kegiatan yang tersimpan.
+                      Belum tersedia album dokumentasi kegiatan untuk ditampilkan pada dashboard.
                     </p>
                   )}
                 </div>
@@ -1231,7 +1201,7 @@ export default function PrincipalView({ user, data }: Props) {
                   <h3 className="font-bold text-slate-900 text-sm sm:text-base">
                     {activeTab === 'laporan-guru' && 'Monitoring Laporan KBM & Guru Mapel'}
                     {activeTab === 'laporan-wali' && 'Monitoring Laporan Wali Kelas & Rombel'}
-                    {activeTab === 'laporan-kegiatan' && 'Monitoring Laporan Kegiatan & Ekstrakurikuler'}
+                    {activeTab === 'laporan-kegiatan' && 'Dokumentasi Kegiatan Sekolah'}
                     {activeTab === 'laporan-rekap' && 'Rekapitulasi Evaluasi Mutu Sekolah'}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
@@ -1248,7 +1218,7 @@ export default function PrincipalView({ user, data }: Props) {
                 {[
                   { id: 'laporan-guru', label: 'Laporan Guru' },
                   { id: 'laporan-wali', label: 'Laporan Wali Kelas' },
-                  { id: 'laporan-kegiatan', label: 'Laporan Kegiatan' },
+                  { id: 'laporan-kegiatan', label: 'Dokumentasi Kegiatan' },
                   { id: 'laporan-rekap', label: 'Rekap Sekolah' },
                 ].map((sub) => (
                   <button
@@ -1272,25 +1242,10 @@ export default function PrincipalView({ user, data }: Props) {
                     <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                     <span>Laporan Jurnal Mengajar & Presensi KBM</span>
                   </h4>
-                  <div className="space-y-3 text-xs sm:text-sm">
-                    {[
-                      { mapel: 'Matematika Peminatan', guru: 'Drs. Muh. Ilham, M.Pd.', kelas: 'Kelas XII MIPA', status: 'Lengkap', tgl: '14 Sep 2026' },
-                      { mapel: 'Bahasa Indonesia', guru: 'Siti Rahmawati, S.Pd.', kelas: 'Kelas X-1, X-2', status: 'Lengkap', tgl: '13 Sep 2026' },
-                      { mapel: 'Fisika Dasar', guru: 'Hasanuddin, S.Si.', kelas: 'Kelas XI-1', status: 'Menunggu Review', tgl: '12 Sep 2026' },
-                    ].map((item, i) => (
-                      <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
-                        <div>
-                          <p className="font-bold text-slate-800">{item.mapel}</p>
-                          <p className="text-xs text-slate-500">{item.guru} • {item.kelas}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                            {item.status}
-                          </span>
-                          <p className="text-[11px] text-slate-400 mt-1">{item.tgl}</p>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-500">
+                    <FileSpreadsheet className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                    <p className="font-bold text-slate-700">Belum Ada Data Jurnal Mengajar</p>
+                    <p className="text-slate-400 mt-1">Belum tersedia data jurnal mengajar untuk ditampilkan pada dashboard.</p>
                   </div>
                 </div>
               )}
@@ -1300,55 +1255,62 @@ export default function PrincipalView({ user, data }: Props) {
                 <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
                   <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
                     <ClipboardList className="w-4 h-4 text-emerald-600" />
-                    <span>Laporan Bimbingan Kelas & Presensi Siswa</span>
+                    <span>Laporan Bimbingan Kelas &amp; Presensi Siswa</span>
                   </h4>
                   <div className="space-y-3 text-xs sm:text-sm">
-                    {[
-                      { rombel: 'Rombel X-1', wali: 'Siti Rahmawati, S.Pd.', kehadiran: '98.5%', catatan: 'Tidak ada kasus indisipliner' },
-                      { rombel: 'Rombel X-2', wali: 'Drs. Muh. Ilham, M.Pd.', kehadiran: '97.2%', catatan: '1 siswa memerlukan tindak lanjut konseling' },
-                      { rombel: 'Rombel XI-1', wali: 'Hasanuddin, S.Si.', kehadiran: '99.0%', catatan: 'Seluruh siswa aktif program peduli lingkungan' },
-                    ].map((item, i) => (
-                      <div key={i} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
+                    {classes.map((cls: any) => (
+                      <div key={cls.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
                         <div>
-                          <p className="font-bold text-slate-800">{item.rombel}</p>
-                          <p className="text-xs text-slate-500">Wali: {item.wali} • {item.catatan}</p>
+                          <p className="font-bold text-slate-800">Kelas {cls.name}</p>
+                          <p className="text-xs text-slate-500">
+                            Wali: {cls.homeroom_teacher?.name || 'Belum ditetapkan'}
+                          </p>
                         </div>
                         <div className="text-right">
-                          <span className="text-xs font-extrabold text-emerald-700">{item.kehadiran}</span>
-                          <p className="text-[11px] text-slate-400">Tingkat Hadir</p>
+                          <span className="text-xs font-extrabold text-emerald-700">
+                            {cls.studentsCount} Siswa
+                          </span>
+                          <p className="text-[11px] text-slate-400">Total Terdaftar</p>
                         </div>
                       </div>
                     ))}
+                    {classes.length === 0 && (
+                      <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-500">
+                        <ClipboardList className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                        <p className="font-bold text-slate-700">Belum Ada Data Rombel Kelas</p>
+                        <p className="text-slate-400 mt-1">Data rombongan belajar dan wali kelas belum terdaftar.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Konten Laporan Kegiatan */}
+              {/* Konten Dokumentasi Kegiatan */}
               {activeTab === 'laporan-kegiatan' && (
                 <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
                   <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
                     <Activity className="w-4 h-4 text-emerald-600" />
-                    <span>Laporan Pelaksanaan Kegiatan & Ekstrakurikuler</span>
+                    <span>Dokumentasi Kegiatan Sekolah</span>
                   </h4>
                   <div className="space-y-3 text-xs sm:text-sm">
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-slate-800">Latihan Gabungan Pramuka & Penjelajahan Alam</p>
-                        <p className="text-xs text-slate-500">Gugus Depan SMAN 18 Bombana • Pelaksana: Pembina Pramuka</p>
+                    {galleryAlbums.map((alb: any) => (
+                      <div key={alb.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-slate-800">{alb.title}</p>
+                          <p className="text-xs text-slate-500">{alb.description || 'Dokumentasi kegiatan resmi sekolah.'}</p>
+                        </div>
+                        <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
+                          {alb.photos?.length || 0} Foto Dokumentasi
+                        </span>
                       </div>
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
-                        Terlaksana
-                      </span>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-slate-800">Bakti Lingkungan Penanaman Bibit Pohon</p>
-                        <p className="text-xs text-slate-500">Kelompok Kerja Adiwiyata & OSIS</p>
+                    ))}
+                    {galleryAlbums.length === 0 && (
+                      <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-500">
+                        <Activity className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                        <p className="font-bold text-slate-700">Belum Ada Data Dokumentasi Kegiatan</p>
+                        <p className="text-slate-400 mt-1">Belum tersedia album dokumentasi kegiatan untuk ditampilkan pada dashboard.</p>
                       </div>
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
-                        Terlaksana
-                      </span>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1358,19 +1320,19 @@ export default function PrincipalView({ user, data }: Props) {
                 <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
                   <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-emerald-600" />
-                    <span>Rekapitulasi Capaian & Evaluasi Sekolah</span>
+                    <span>Rekapitulasi Capaian &amp; Evaluasi Sekolah</span>
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100">
-                      <p className="font-bold text-emerald-900 text-sm">Capaian Kurikulum Merdeka</p>
+                      <p className="font-bold text-emerald-900 text-sm">Rekapitulasi Sumber Daya Akademik</p>
                       <p className="text-slate-600 mt-1">
-                        Ketercapaian modul ajar mencapai 94% sesuai alur tujuan pembelajaran (ATP).
+                        Terdaftar {stats.totalTeachers} dewan guru dan {classes.length} rombel aktif melayani {stats.totalStudents} peserta didik.
                       </p>
                     </div>
                     <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-100">
-                      <p className="font-bold text-teal-900 text-sm">Indeks Kepuasan Lingkungan Belajar</p>
+                      <p className="font-bold text-teal-900 text-sm">Supervisi Pembinaan Karakter &amp; Lingkungan</p>
                       <p className="text-slate-600 mt-1">
-                        Kondisi kelas kondusif, sarana perpustakaan dan laboratorium beroperasi optimal.
+                        Tercatat {stats.totalWaliKelas} rombel memiliki wali kelas pembina dan {stats.totalActivities} album dokumentasi kegiatan tersedia.
                       </p>
                     </div>
                   </div>
@@ -1496,6 +1458,16 @@ export default function PrincipalView({ user, data }: Props) {
                       )}
                     </div>
                   ))}
+
+                  {approvals.length === 0 && (
+                    <div className="p-8 text-center bg-white rounded-3xl border border-slate-200/80 space-y-2">
+                      <CheckSquare className="w-8 h-8 text-emerald-500 mx-auto mb-1" />
+                      <p className="font-bold text-slate-800 text-sm">Belum Ada Data Dokumen Persetujuan</p>
+                      <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                        Belum tersedia data dokumen persetujuan untuk ditampilkan pada dashboard.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1569,56 +1541,28 @@ export default function PrincipalView({ user, data }: Props) {
               </div>
 
               <div className="space-y-3">
-                <div className="bg-white rounded-2xl p-4 border border-amber-200/80 shadow-xs flex items-start gap-3.5">
-                  <div className="p-2 rounded-xl bg-amber-50 text-amber-700 shrink-0">
-                    <AlertCircle className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800 text-sm">
-                        Perhatian Khusus: Supervisi Pembelajaran Semester Ganjil
-                      </span>
-                      <span className="text-[11px] text-slate-400">Hari ini</span>
+                {announcements.slice(0, 5).map((a: any) => (
+                  <div key={a.id} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-start gap-3.5">
+                    <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700 shrink-0">
+                      <Megaphone className="w-5 h-5" />
                     </div>
-                    <p className="text-slate-600 mt-1">
-                      Jadwal supervisi kelas X telah diagendakan pekan depan. Harap meninjau instrumen supervisi kurikulum.
-                    </p>
+                    <div className="flex-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-800 text-sm">{a.title}</span>
+                        <span className="text-[11px] text-slate-400">
+                          {new Date(a.published_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 mt-1 line-clamp-2">{a.content}</p>
+                    </div>
                   </div>
-                </div>
+                ))}
 
-                <div className="bg-white rounded-2xl p-4 border border-emerald-100 shadow-xs flex items-start gap-3.5">
-                  <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700 shrink-0">
-                    <CheckSquare className="w-5 h-5" />
+                {announcements.length === 0 && (
+                  <div className="p-8 text-center bg-white rounded-2xl border border-slate-200/80 text-xs text-slate-400">
+                    Belum ada notifikasi atau pengumuman baru untuk Kepala Sekolah.
                   </div>
-                  <div className="flex-1 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800 text-sm">
-                        Laporan Masuk: Presensi & Karakter Rombel X-1
-                      </span>
-                      <span className="text-[11px] text-slate-400">Kemarin</span>
-                    </div>
-                    <p className="text-slate-600 mt-1">
-                      Wali Kelas X-1 telah mengirimkan rekap bulanan keaktifan dan bimbingan siswa untuk ditinjau.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-start gap-3.5">
-                  <div className="p-2 rounded-xl bg-blue-50 text-blue-700 shrink-0">
-                    <Megaphone className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800 text-sm">
-                        Pengumuman Baru Telah Diterbitkan
-                      </span>
-                      <span className="text-[11px] text-slate-400">3 hari lalu</span>
-                    </div>
-                    <p className="text-slate-600 mt-1">
-                      Informasi resmi terkait persiapan Asesmen Nasional telah tayang di portal publik sekolah.
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}

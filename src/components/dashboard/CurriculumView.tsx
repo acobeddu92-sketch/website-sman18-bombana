@@ -1972,10 +1972,10 @@ export default function CurriculumView({ user }: Props) {
               <div className="pt-8 flex justify-between text-xs text-slate-700">
                 <div>
                   <p>Mengetahui,</p>
-                  <p className="font-bold">Kepala SMA Negeri 18 Bombana</p>
+                  <p className="font-bold">{dashboardData?.principal?.position || 'Belum ditetapkan'}</p>
                   <div className="h-16" />
-                  <p className="font-extrabold underline">H. Syafruddin, S.Pd., M.Pd.</p>
-                  <p className="text-slate-500">NIP. 19700101 199501 1 001</p>
+                  <p className="font-extrabold underline">{dashboardData?.principal?.name || 'Belum ditetapkan'}</p>
+                  <p className="text-slate-500">{dashboardData?.principal?.nip || 'NIP. -'}</p>
                 </div>
                 <div className="text-right">
                   <p>Poleang, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>

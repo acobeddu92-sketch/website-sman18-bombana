@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/server-auth';
+import { getActivePrincipal } from '@/lib/principal';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
   if (errorResponse) return errorResponse;
 
   try {
-    const [teachers, classes, schedules, materials, announcements] = await Promise.all([
+    const [teachers, classes, schedules, materials, announcements, activePrincipal, principalContent] = await Promise.all([
       prisma.user.findMany({
         where: {
           role: { in: ['guru', 'guru_mapel', 'guru_bk', 'wali_kelas'] },
@@ -58,6 +59,8 @@ export async function GET(request: NextRequest) {
         orderBy: { published_at: 'desc' },
         take: 10,
       }),
+      getActivePrincipal(),
+      prisma.principalProfile.findFirst().catch(() => null),
     ]);
 
     // 1. Perhitungan Indikator Utama
@@ -192,6 +195,11 @@ export async function GET(request: NextRequest) {
         category: a.category,
         published_at: a.published_at.toISOString(),
       })),
+      principal: {
+        name: activePrincipal?.name || 'Belum ditetapkan',
+        position: principalContent?.position || 'Belum ditetapkan',
+        nip: 'NIP. -',
+      },
     });
   } catch (error: any) {
     console.error('Error in GET /api/curriculum/dashboard:', error);

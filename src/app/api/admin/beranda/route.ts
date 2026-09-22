@@ -5,9 +5,11 @@ import { AUTH_COOKIE_NAME } from '@/lib/constants';
 import { prisma } from '@/lib/prisma';
 import { deleteUploadedFile } from '@/lib/storage';
 
+import { getActivePrincipal } from '@/lib/principal';
+
 export const dynamic = 'force-dynamic';
 
-// GET: Ambil data beranda (School, Principal, Background)
+// GET: Ambil data beranda (School, Principal, Background, Active Principal User)
 export async function GET() {
   try {
     const cookieStore = cookies();
@@ -19,13 +21,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Hanya untuk Administrator.' }, { status: 403 });
     }
 
-    const [school, principal, background] = await Promise.all([
+    const [school, principal, background, activePrincipal] = await Promise.all([
       prisma.schoolProfile.findFirst(),
       prisma.principalProfile.findFirst(),
       prisma.homeBackground.findFirst({ orderBy: { updated_at: 'desc' } }),
+      getActivePrincipal(),
     ]);
 
-    return NextResponse.json({ school, principal, background });
+    return NextResponse.json({ school, principal, background, activePrincipal });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Gagal mengambil data beranda.' },
@@ -63,6 +66,8 @@ export async function PUT(req: NextRequest) {
 
     // 2. Update Principal Profile
     let principal = await prisma.principalProfile.findFirst();
+    const activePrincipalUser = await getActivePrincipal();
+
     if (principal) {
       // Jika foto diganti dan foto lama tersimpan di /uploads/, hapus file lama
       if (principal_photo && principal.photo && principal.photo !== principal_photo) {
@@ -72,8 +77,8 @@ export async function PUT(req: NextRequest) {
       principal = await prisma.principalProfile.update({
         where: { id: principal.id },
         data: {
-          name: principal_name ?? principal.name,
-          position: principal_position ?? principal.position,
+          name: activePrincipalUser?.name || principal.name,
+          position: principal_position ?? 'Kepala SMA Negeri 18 Bombana',
           photo: principal_photo !== undefined ? principal_photo : principal.photo,
           message: principal_message ?? principal.message,
         },

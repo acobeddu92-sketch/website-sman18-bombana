@@ -1,6 +1,7 @@
 import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { getDailyMessage } from '@/lib/daily-message';
+import { getActivePrincipal } from '@/lib/principal';
 import {
   ShieldAlert,
   UserCheck,
@@ -19,7 +20,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
   // Ambil data statistik sistem
-  const [adminCount, kepsekCount, guruCount, siswaCount, totalQuotes, principal, totalAlbums, totalPhotos, totalAnnounce] =
+  const [adminCount, kepsekCount, guruCount, siswaCount, totalQuotes, principal, totalAlbums, totalPhotos, totalAnnounce, activePrincipal] =
     await Promise.all([
       prisma.user.count({ where: { role: 'administrator' } }),
       prisma.user.count({ where: { role: 'kepala_sekolah' } }),
@@ -30,6 +31,7 @@ export default async function AdminDashboardPage() {
       prisma.galleryAlbum.count(),
       prisma.galleryPhoto.count(),
       prisma.announcement.count(),
+      getActivePrincipal(),
     ]);
 
   const dailyQuote = await getDailyMessage();
@@ -231,7 +233,7 @@ export default async function AdminDashboardPage() {
             </div>
 
             <div className="text-xs sm:text-sm text-slate-600 space-y-2">
-              <p><strong>Nama:</strong> {principal?.name || 'H. Syafruddin, S.Pd., M.Pd.'}</p>
+              <p><strong>Nama:</strong> {activePrincipal?.name || 'Belum ditetapkan'}</p>
               <p><strong>Jabatan:</strong> {principal?.position || 'Kepala SMA Negeri 18 Bombana'}</p>
               <p className="italic text-slate-700 border-l-2 border-emerald-500 pl-3 py-1">
                 &ldquo;{principal?.message}&rdquo;
