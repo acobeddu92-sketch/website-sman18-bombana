@@ -116,16 +116,6 @@ export default function TeacherView({ user }: Props) {
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
   const [scheduleViewMode, setScheduleViewMode] = useState<'today' | 'weekly'>('weekly');
   const [scheduleDayFilter, setScheduleDayFilter] = useState('all');
-  const [isAddScheduleModalOpen, setIsAddScheduleModalOpen] = useState(false);
-  const [scheduleForm, setScheduleForm] = useState({
-    class_id: '',
-    subject: '',
-    day: 'Senin',
-    start_time: '07:30',
-    end_time: '09:00',
-    room: '',
-  });
-  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
 
   // Rekap Absen Bulanan
   const [attendancesHistory, setAttendancesHistory] = useState<any[]>([]);
@@ -218,7 +208,6 @@ export default function TeacherView({ user }: Props) {
           setAbsenSubject(data.subjects[0]);
           setMaterialForm((prev) => ({ ...prev, subject: data.subjects[0] }));
           setAssignmentForm((prev) => ({ ...prev, subject: data.subjects[0] }));
-          setScheduleForm((prev) => ({ ...prev, subject: data.subjects[0] }));
         }
       }
     } catch (error) {
@@ -237,7 +226,6 @@ export default function TeacherView({ user }: Props) {
         setClasses(data.classes || []);
         if (data.classes.length > 0 && !absenClassId) {
           setAbsenClassId(data.classes[0].id);
-          setScheduleForm((prev) => ({ ...prev, class_id: data.classes[0].id }));
           setMaterialForm((prev) => ({ ...prev, class_id: data.classes[0].id }));
           setAssignmentForm((prev) => ({ ...prev, class_id: data.classes[0].id }));
         }
@@ -358,35 +346,6 @@ export default function TeacherView({ user }: Props) {
   // --------------------------------------------------------------------------
   // HANDLERS: JADWAL MENGAJAR
   // --------------------------------------------------------------------------
-
-  const handleCreateSchedule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!scheduleForm.class_id || !scheduleForm.subject || !scheduleForm.day || !scheduleForm.start_time || !scheduleForm.end_time) {
-      alert('Mohon lengkapi semua kolom wajib jadwal mengajar.');
-      return;
-    }
-
-    setIsSavingSchedule(true);
-    try {
-      const res = await fetch('/api/teacher/schedules', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scheduleForm),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setIsAddScheduleModalOpen(false);
-        fetchSchedules();
-        fetchDashboardData();
-      } else {
-        alert(data.error || 'Gagal menambahkan jadwal mengajar.');
-      }
-    } catch (err: any) {
-      alert(err.message || 'Terjadi kesalahan sistem.');
-    } finally {
-      setIsSavingSchedule(false);
-    }
-  };
 
   // --------------------------------------------------------------------------
   // HANDLERS: REKAP ABSEN BULANAN
@@ -1293,13 +1252,10 @@ export default function TeacherView({ user }: Props) {
                       <Clock className="w-8 h-8 mx-auto text-slate-300" />
                       <p className="text-xs">Tidak ada jadwal tatap muka untuk hari ini.</p>
                       <button
-                        onClick={() => {
-                          setActiveTab('jadwal');
-                          setIsAddScheduleModalOpen(true);
-                        }}
-                        className="text-xs text-emerald-600 font-bold hover:underline"
+                        onClick={() => setActiveTab('jadwal')}
+                        className="text-xs text-emerald-600 font-bold hover:underline cursor-pointer"
                       >
-                        + Tambah Jadwal Mengajar
+                        Lihat Jadwal Lengkap
                       </button>
                     </div>
                   ) : (
@@ -1506,17 +1462,25 @@ export default function TeacherView({ user }: Props) {
                 <div>
                   <h2 className="text-lg font-black text-slate-900">Jadwal Mengajar Guru</h2>
                   <p className="text-xs text-slate-500">
-                    Kelola dan pantau agenda kegiatan belajar mengajar mingguan Anda.
+                    Jadwal tatap muka resmi yang telah ditetapkan oleh Wakasek Kurikulum.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsAddScheduleModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Tambah Jadwal
-                  </button>
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Master Data Kurikulum
+                  </div>
+                </div>
+              </div>
+
+              {/* Informational Banner */}
+              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-start gap-3 text-xs text-blue-900">
+                <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-bold">Jadwal Mengajar Resmi Sekolah</p>
+                  <p className="text-blue-700 text-[11px] leading-relaxed">
+                    Jadwal pelajaran di bawah ini ditetapkan secara terpusat oleh Wakasek Kurikulum sebagai sumber tunggal data pengajaran. Jika terdapat penyesuaian jam atau pergantian rombel tatap muka, silakan berkoordinasi langsung dengan Wakasek Kurikulum.
+                  </p>
                 </div>
               </div>
 
@@ -1573,7 +1537,7 @@ export default function TeacherView({ user }: Props) {
                   <Clock className="w-10 h-10 mx-auto text-slate-300" />
                   <p className="text-sm font-semibold text-slate-700">Tidak ada jadwal yang sesuai kriteria.</p>
                   <p className="text-xs text-slate-400">
-                    Klik tombol "Tambah Jadwal" di atas untuk menambahkan jadwal mengajar baru.
+                    Belum ada jadwal mengajar yang dialokasikan untuk Anda oleh Wakasek Kurikulum pada hari yang dipilih.
                   </p>
                 </div>
               ) : (
@@ -2855,123 +2819,7 @@ export default function TeacherView({ user }: Props) {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL 2: TAMBAH JADWAL MENGAJAR */}
-      {/* ========================================================================= */}
-      {isAddScheduleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-bold text-slate-900 text-base">Tambah Jadwal Mengajar</h3>
-              </div>
-              <button
-                onClick={() => setIsAddScheduleModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <form onSubmit={handleCreateSchedule} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Kelas</label>
-                <select
-                  required
-                  value={scheduleForm.class_id}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, class_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                >
-                  <option value="">Pilih Kelas Target</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      Kelas {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Mata Pelajaran</label>
-                <input
-                  type="text"
-                  required
-                  value={scheduleForm.subject}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, subject: e.target.value })}
-                  placeholder="e.g. Bahasa Indonesia"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Hari</label>
-                  <select
-                    value={scheduleForm.day}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, day: e.target.value })}
-                    className="w-full px-2.5 py-2 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  >
-                    {DAYS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Jam Mulai</label>
-                  <input
-                    type="time"
-                    required
-                    value={scheduleForm.start_time}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, start_time: e.target.value })}
-                    className="w-full px-2 py-2 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Jam Selesai</label>
-                  <input
-                    type="time"
-                    required
-                    value={scheduleForm.end_time}
-                    onChange={(e) => setScheduleForm({ ...scheduleForm, end_time: e.target.value })}
-                    className="w-full px-2 py-2 rounded-xl border border-slate-200 font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Ruangan / Lab (Opsional)</label>
-                <input
-                  type="text"
-                  value={scheduleForm.room}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, room: e.target.value })}
-                  placeholder="e.g. Lab Komputer 1 / Ruang XII-A"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsAddScheduleModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingSchedule}
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50"
-                >
-                  {isSavingSchedule ? 'Menyimpan...' : 'Simpan Jadwal'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* MODAL 3: UNGGAH MATERI BARU */}
