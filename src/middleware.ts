@@ -9,6 +9,14 @@ export async function middleware(request: NextRequest) {
 
   const session = sessionCookie ? await verifySessionToken(sessionCookie) : null;
 
+  // 0. Penegakan force_password_change (User WAJIB mengganti password sebelum dapat mengakses dashboard biasa)
+  if (session && session.force_password_change) {
+    if (pathname !== '/dashboard/profile') {
+      return NextResponse.redirect(new URL('/dashboard/profile?forceChange=true', request.url));
+    }
+    return NextResponse.next();
+  }
+
   // 1. Proteksi rute /admin/*
   if (pathname.startsWith('/admin')) {
     if (!session) {

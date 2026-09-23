@@ -36,7 +36,9 @@ import {
   Calendar,
   Layers,
   Building2,
+  User,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface Props {
   user: {
@@ -234,6 +236,7 @@ export default function PrincipalView({ user, data }: Props) {
     },
     { id: 'notifikasi', label: 'Notifikasi', icon: Bell, badgeCount: announcements.length > 0 ? announcements.length : undefined },
     { id: 'pengaturan', label: 'Pengaturan Akun', icon: Settings },
+    { id: 'profil-saya', label: 'Profil Saya', icon: User, href: '/dashboard/profile' },
   ];
 
   return (
@@ -281,21 +284,30 @@ export default function PrincipalView({ user, data }: Props) {
         </div>
 
         {/* User Card Singkat di Sidebar */}
-        <div className="mx-4 mt-4 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/80 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-            <Award className="w-6 h-6 text-emerald-100" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full">
-                Kepala Sekolah
-              </span>
+        <div className="mx-4 mt-4 p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/80 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+              <Award className="w-6 h-6 text-emerald-100" />
             </div>
-            <p className="text-xs font-bold text-slate-800 truncate mt-0.5">
-              {user.name}
-            </p>
-            <p className="text-[11px] text-slate-500 truncate">@{user.username}</p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                  Kepala Sekolah
+                </span>
+              </div>
+              <p className="text-xs font-bold text-slate-800 truncate mt-0.5">
+                {user.name}
+              </p>
+              <p className="text-[11px] text-slate-500 truncate">@{user.username}</p>
+            </div>
           </div>
+          <Link
+            href="/dashboard/profile"
+            className="p-2 rounded-xl bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-100/60 transition-colors shadow-2xs shrink-0"
+            title="Kelola Profil Saya"
+          >
+            <User className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* Menu Items Navigasi */}
@@ -354,6 +366,21 @@ export default function PrincipalView({ user, data }: Props) {
                     </div>
                   )}
                 </div>
+              );
+            }
+
+            if ((item as any).href) {
+              return (
+                <Link
+                  key={item.id}
+                  href={(item as any).href}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:bg-slate-50 hover:text-emerald-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 text-slate-400" />
+                    <span>{item.label}</span>
+                  </div>
+                </Link>
               );
             }
 

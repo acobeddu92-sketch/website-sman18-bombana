@@ -12,7 +12,7 @@ async function getAdminSession(request: NextRequest) {
   return session;
 }
 
-// PUT: Update user (nama, email, role, is_active, reset password)
+// PUT: Update user (HANYA role dan is_active oleh Admin)
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -26,7 +26,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { name, email, role, is_active, newPassword } = body;
+    const { role, is_active } = body;
 
     const existingUser = await prisma.user.findUnique({
       where: { id },
@@ -36,12 +36,10 @@ export async function PUT(
       return NextResponse.json({ error: 'User tidak ditemukan.' }, { status: 404 });
     }
 
-    // Siapkan update payload
+    // Siapkan update payload hanya untuk hak akses administratif akun (role & status aktif)
     const updateData: any = {};
 
-    if (name) updateData.name = String(name).trim();
-    if (email) updateData.email = String(email).trim().toLowerCase();
-    if (role) {
+    if (role !== undefined) {
       const validRoles = [
         'administrator',
         'kepala_sekolah',
@@ -61,6 +59,7 @@ export async function PUT(
       }
       updateData.role = role;
     }
+
     if (is_active !== undefined) {
       // Cegah admin menonaktifkan akunnya sendiri
       if (admin.id === id && is_active === false) {
@@ -70,10 +69,6 @@ export async function PUT(
         );
       }
       updateData.is_active = Boolean(is_active);
-    }
-    // Jika ada reset password
-    if (newPassword && newPassword.trim().length > 0) {
-      updateData.password_hash = await hashPassword(newPassword);
     }
 
     const updatedUser = await prisma.user.update({
@@ -90,7 +85,11 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({ success: true, user: updatedUser });
+    return NextResponse.json({
+      success: true,
+      message: 'Status/peran akun berhasil diperbarui.',
+      user: updatedUser,
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Gagal memperbarui user.' }, { status: 500 });

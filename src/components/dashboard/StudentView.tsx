@@ -1,7 +1,8 @@
 import React from 'react';
+import Link from 'next/link';
 import LogoutButton from './LogoutButton';
 import { UserRole } from '@/lib/constants';
-import { GraduationCap, Award, Calendar, BookOpen, Sparkles, CheckCircle2 } from 'lucide-react';
+import { GraduationCap, Award, Calendar, BookOpen, Sparkles, CheckCircle2, User } from 'lucide-react';
 
 interface Props {
   user: {
@@ -39,6 +40,13 @@ export default function StudentView({ user }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <Link
+              href="/dashboard/profile"
+              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1.5 shadow-2xs"
+            >
+              <User className="w-4 h-4" />
+              <span>Profil Saya</span>
+            </Link>
             <a
               href="/"
               className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors"

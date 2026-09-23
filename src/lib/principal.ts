@@ -19,6 +19,8 @@ export async function getActivePrincipal() {
         email: true,
         role: true,
         is_active: true,
+        nip: true,
+        photo: true,
       },
     });
 
@@ -31,10 +33,9 @@ export async function getActivePrincipal() {
 
 /**
  * Mengambil profil lengkap Kepala Sekolah:
- * - Identitas (nama, id, email) bersumber dari User (canonical)
- * - Foto & Sambutan bersumber dari PrincipalProfile (CMS)
- * - Jabatan bersumber dari PrincipalProfile (CMS), fallback 'Belum ditetapkan'
- * - NIP: 'NIP. -' (karena belum tersedia di schema database)
+ * - Identitas (nama, id, email, nip, photo) bersumber dari User (canonical)
+ * - Foto transisi: User.photo (prioritas) -> PrincipalProfile.photo (fallback sementara) -> default
+ * - Sambutan & Jabatan bersumber dari PrincipalProfile (CMS)
  */
 export async function getPrincipalCompositeProfile() {
   const [principalUser, principalContent] = await Promise.all([
@@ -42,14 +43,17 @@ export async function getPrincipalCompositeProfile() {
     prisma.principalProfile.findFirst().catch(() => null),
   ]);
 
+  const photo = principalUser?.photo || principalContent?.photo || '/images/kepala-sekolah.jpg';
+  const nip = principalUser?.nip ? (principalUser.nip.startsWith('NIP') ? principalUser.nip : `NIP. ${principalUser.nip}`) : 'NIP. -';
+
   return {
     id: principalUser?.id || null,
     name: principalUser?.name || 'Belum ditetapkan',
     username: principalUser?.username || null,
     email: principalUser?.email || null,
     position: principalContent?.position || 'Belum ditetapkan',
-    nip: 'NIP. -',
-    photo: principalContent?.photo || '/images/kepala-sekolah.jpg',
+    nip,
+    photo,
     message:
       principalContent?.message ||
       'Mari kita jadikan sekolah sebagai tempat untuk tumbuh, belajar, berkarya, dan mempersiapkan masa depan dengan penuh integritas dan kecintaan pada lingkungan hidup.',
@@ -60,6 +64,7 @@ export async function getPrincipalCompositeProfile() {
 /**
  * Proyeksi publik data Kepala Sekolah:
  * Hanya mengekspos name, position, photo, dan message.
+ * Foto mengutamakan User.photo, dengan fallback PrincipalProfile.photo.
  * Tidak mengekspos NIP, ID, username, email, role, ataupun status teknis akun.
  */
 export async function getPublicPrincipalProfile() {
@@ -68,10 +73,12 @@ export async function getPublicPrincipalProfile() {
     prisma.principalProfile.findFirst().catch(() => null),
   ]);
 
+  const photo = principalUser?.photo || principalContent?.photo || '/images/kepala-sekolah.jpg';
+
   return {
     name: principalUser?.name || 'Belum ditetapkan',
     position: principalContent?.position || 'Belum ditetapkan',
-    photo: principalContent?.photo || '/images/kepala-sekolah.jpg',
+    photo,
     message:
       principalContent?.message ||
       'Mari kita jadikan sekolah sebagai tempat untuk tumbuh, belajar, berkarya, dan mempersiapkan masa depan dengan penuh integritas dan kecintaan pada lingkungan hidup.',

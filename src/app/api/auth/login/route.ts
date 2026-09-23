@@ -81,10 +81,15 @@ export async function POST(request: NextRequest) {
       username: user.username,
       role: userRole,
       email: user.email,
+      force_password_change: user.force_password_change,
     });
 
-    // 7. Tentukan tujuan pengalihan (redirect) berdasarkan role akun sebenarnya
-    const redirectUrl = userRole === 'administrator' ? '/admin' : '/dashboard';
+    // 7. Tentukan tujuan pengalihan (redirect) berdasarkan status force_password_change dan role
+    const redirectUrl = user.force_password_change
+      ? '/dashboard/profile?forceChange=true'
+      : userRole === 'administrator'
+      ? '/admin'
+      : '/dashboard';
 
     // 8. Bentuk Response & Simpan Token ke HTTP-Only Cookie
     const response = NextResponse.json({
@@ -95,6 +100,7 @@ export async function POST(request: NextRequest) {
         username: user.username,
         role: user.role,
         email: user.email,
+        force_password_change: user.force_password_change,
       },
       redirectUrl,
     });

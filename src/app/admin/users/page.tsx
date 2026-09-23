@@ -48,9 +48,11 @@ export default function UsersManagementPage() {
     is_active: true,
   });
 
-  // Reset Password Modal State
+  // Reset Password State
   const [resetModalUser, setResetModalUser] = useState<UserItem | null>(null);
-  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [generatedTempPassword, setGeneratedTempPassword] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
   // Status & Notification
   const [errorMsg, setErrorMsg] = useState('');
@@ -84,7 +86,7 @@ export default function UsersManagementPage() {
       username: '',
       email: '',
       password: '',
-      role: 'guru',
+      role: 'guru_mapel',
       is_active: true,
     });
     setIsModalOpen(true);
@@ -110,20 +112,18 @@ export default function UsersManagementPage() {
 
     try {
       if (editingUser) {
-        // Update user
+        // Update user: HANYA role dan is_active (Nama dan email dikelola mandiri oleh user)
         const res = await fetch(`/api/admin/users/${editingUser.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
             role: formData.role,
             is_active: formData.is_active,
           }),
         });
         const data = await res.json();
         if (res.ok) {
-          setSuccessMsg('Data user berhasil diperbarui.');
+          setSuccessMsg('Peran & status user berhasil diperbarui.');
           setIsModalOpen(false);
           fetchUsers();
         } else {
@@ -190,27 +190,33 @@ export default function UsersManagementPage() {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resetModalUser || !newPasswordInput) return;
+  const handleExecuteResetPassword = async () => {
+    if (!resetModalUser) return;
+    setIsResetting(true);
+    setErrorMsg('');
 
     try {
-      const res = await fetch(`/api/admin/users/${resetModalUser.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: newPasswordInput }),
+      const res = await fetch(`/api/admin/users/${resetModalUser.id}/reset-password`, {
+        method: 'POST',
       });
       const data = await res.json();
       if (res.ok) {
-        setSuccessMsg(`Password user @${resetModalUser.username} berhasil direset.`);
-        setResetModalUser(null);
-        setNewPasswordInput('');
+        setGeneratedTempPassword(data.temporaryPassword);
+        setSuccessMsg(`Password @${resetModalUser.username} berhasil direset. Silakan salin password sementara.`);
       } else {
         setErrorMsg(data.error || 'Gagal mereset password.');
       }
     } catch (e) {
       setErrorMsg('Gagal mereset password.');
+    } finally {
+      setIsResetting(false);
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedPassword(true);
+    setTimeout(() => setCopiedPassword(false), 2500);
   };
 
   // Filter & Pencarian
@@ -418,9 +424,10 @@ export default function UsersManagementPage() {
                         <button
                           onClick={() => {
                             setResetModalUser(user);
-                            setNewPasswordInput('');
+                            setGeneratedTempPassword(null);
+                            setCopiedPassword(false);
                           }}
-                          title="Reset Password"
+                          title="Reset Password Akun"
                           className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
                         >
                           <Key className="w-4 h-4" />
@@ -429,7 +436,7 @@ export default function UsersManagementPage() {
                         {/* Edit User */}
                         <button
                           onClick={() => openEditModal(user)}
-                          title="Edit Data User"
+                          title="Edit Peran & Status Akun"
                           className="p-1.5 rounded-lg border border-slate-200 text-blue-600 hover:bg-blue-50 transition-colors"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -459,7 +466,7 @@ export default function UsersManagementPage() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
               <h3 className="text-lg font-bold text-slate-900">
-                {editingUser ? 'Edit Data Pengguna' : 'Tambah Pengguna Baru'}
+                {editingUser ? 'Edit Peran & Status Pengguna' : 'Tambah Pengguna Baru'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -471,16 +478,24 @@ export default function UsersManagementPage() {
 
             <form onSubmit={handleSaveUser} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Nama Lengkap
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Nama Lengkap
+                  </label>
+                  {editingUser && (
+                    <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
+                      Dikelola Mandiri oleh User
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   required
+                  disabled={Boolean(editingUser)}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Contoh: Budi Santoso, S.Pd."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -495,21 +510,29 @@ export default function UsersManagementPage() {
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   placeholder="Contoh: budi_guru"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Email
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Email
+                  </label>
+                  {editingUser && (
+                    <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
+                      Dikelola Mandiri oleh User
+                    </span>
+                  )}
+                </div>
                 <input
                   type="email"
                   required
+                  disabled={Boolean(editingUser)}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="Contoh: budi@sman18bombana.sch.id"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -588,46 +611,102 @@ export default function UsersManagementPage() {
       {/* Modal Reset Password */}
       {resetModalUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
-              <Key className="w-5 h-5 text-amber-600" />
-              <span>Reset Password User</span>
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Masukkan password baru untuk user <strong>@{resetModalUser.username}</strong> ({resetModalUser.name}).
-            </p>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Key className="w-5 h-5 text-amber-600" />
+                <span>Reset Password Akun</span>
+              </h3>
+              <button
+                onClick={() => {
+                  setResetModalUser(null);
+                  setGeneratedTempPassword(null);
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Password Baru
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={newPasswordInput}
-                  onChange={(e) => setNewPasswordInput(e.target.value)}
-                  placeholder="Ketik password baru"
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
+            {!generatedTempPassword ? (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Apakah Anda yakin ingin mereset password untuk user <strong>@{resetModalUser.username}</strong> ({resetModalUser.name})?
+                </p>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setResetModalUser(null)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
-                >
-                  Reset Password
-                </button>
+                <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 space-y-1.5">
+                  <p className="font-bold flex items-center gap-1.5 text-amber-800">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    Ketentuan Reset Keamanan:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 pl-1 text-[11px] text-amber-800">
+                    <li>Sistem menghasilkan password sementara acak baru secara otomatis.</li>
+                    <li>Password lama langsung digantikan dengan hash bcrypt baru.</li>
+                    <li>Pengguna <strong>wajib mengganti password</strong> saat pertama kali login.</li>
+                  </ul>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setResetModalUser(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isResetting}
+                    onClick={handleExecuteResetPassword}
+                    className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-md transition-all disabled:opacity-50"
+                  >
+                    {isResetting ? 'Memproses...' : 'Generate & Reset Password'}
+                  </button>
+                </div>
               </div>
-            </form>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium">
+                  Password sementara berhasil dibuat! Password ini hanya ditampilkan <strong>SEKALI</strong> pada layar ini.
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Password Sementara:
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 py-2.5 px-4 bg-slate-900 text-emerald-400 font-mono text-base font-bold rounded-xl text-center select-all tracking-wider border border-slate-800">
+                      {generatedTempPassword}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(generatedTempPassword)}
+                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shrink-0 transition-colors"
+                    >
+                      {copiedPassword ? 'Tersalin!' : 'Salin'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 leading-relaxed">
+                  Segera berikan password sementara ini kepada <strong>{resetModalUser.name}</strong> (@{resetModalUser.username}). Setelah pengguna login, sistem akan langsung mengarahkan ke halaman ganti password baru.
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResetModalUser(null);
+                      setGeneratedTempPassword(null);
+                      setCopiedPassword(false);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm"
+                  >
+                    Selesai &amp; Tutup
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

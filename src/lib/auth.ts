@@ -11,6 +11,7 @@ export interface SessionPayload {
   username: string;
   role: UserRole;
   email: string;
+  force_password_change?: boolean;
 }
 
 // Enkripsi dan pembuatan token JWT (Murni Edge runtime safe menggunakan jose)
@@ -32,6 +33,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       username: payload.username as string,
       role: payload.role as UserRole,
       email: payload.email as string,
+      force_password_change: Boolean(payload.force_password_change),
     };
   } catch {
     return null;

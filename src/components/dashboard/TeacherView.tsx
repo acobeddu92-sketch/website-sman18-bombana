@@ -39,7 +39,9 @@ import {
   MapPin,
   Trash2,
   Info,
+  User,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface Props {
   user: {
@@ -863,6 +865,14 @@ export default function TeacherView({ user }: Props) {
             </a>
             <div className="h-6 w-px bg-slate-200 hidden sm:block" />
             <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard/profile"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-2xs"
+                title="Kelola Profil Saya"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Profil Saya</span>
+              </Link>
               <div className="text-right hidden md:block">
                 <p className="text-xs font-bold text-slate-900 leading-tight">{user.name}</p>
                 <p className="text-[10px] text-slate-500 font-mono">@{user.username}</p>
@@ -1038,6 +1048,14 @@ export default function TeacherView({ user }: Props) {
                 <Settings className="w-4 h-4" />
                 9. Pengaturan Akun
               </button>
+
+              <Link
+                href="/dashboard/profile"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-emerald-800 transition-all"
+              >
+                <User className="w-4 h-4 text-slate-400" />
+                10. Profil Saya
+              </Link>
             </div>
           </div>
 
@@ -1091,8 +1109,22 @@ export default function TeacherView({ user }: Props) {
                     { id: 'piket', label: '7. Laporan Piket', icon: ShieldAlert },
                     { id: 'notifikasi', label: '8. Notifikasi', icon: Bell },
                     { id: 'pengaturan', label: '9. Pengaturan Akun', icon: Settings },
+                    { id: 'profil', label: '10. Profil Saya', icon: User, href: '/dashboard/profile' },
                   ].map((item) => {
                     const Icon = item.icon;
+                    if ((item as any).href) {
+                      return (
+                        <Link
+                          key={item.id}
+                          href={(item as any).href}
+                          onClick={() => setIsMobileNavOpen(false)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                        >
+                          <Icon className="w-4 h-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    }
                     return (
                       <button
                         key={item.id}

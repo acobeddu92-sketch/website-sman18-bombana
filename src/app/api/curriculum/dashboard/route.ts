@@ -198,7 +198,11 @@ export async function GET(request: NextRequest) {
       principal: {
         name: activePrincipal?.name || 'Belum ditetapkan',
         position: principalContent?.position || 'Belum ditetapkan',
-        nip: 'NIP. -',
+        nip: activePrincipal?.nip
+          ? activePrincipal.nip.startsWith('NIP')
+            ? activePrincipal.nip
+            : `NIP. ${activePrincipal.nip}`
+          : 'NIP. -',
       },
     });
   } catch (error: any) {

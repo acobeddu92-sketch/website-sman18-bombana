@@ -3,8 +3,6 @@ import { cookies } from 'next/headers';
 import { verifySessionToken } from '@/lib/auth';
 import { AUTH_COOKIE_NAME } from '@/lib/constants';
 import { prisma } from '@/lib/prisma';
-import { deleteUploadedFile } from '@/lib/storage';
-
 import { getActivePrincipal } from '@/lib/principal';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +35,7 @@ export async function GET() {
   }
 }
 
-// PUT: Perbarui data Hero & Kepala Sekolah
+// PUT: Perbarui data Hero & Konten CMS Beranda Kepala Sekolah (jabatan & pesan sambutan)
 export async function PUT(req: NextRequest) {
   try {
     const cookieStore = cookies();
@@ -50,7 +48,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { school_name, tagline, principal_name, principal_position, principal_photo, principal_message } = body;
+    const { school_name, tagline, principal_position, principal_message } = body;
 
     // 1. Update School Profile (Hero)
     let school = await prisma.schoolProfile.findFirst();
@@ -64,22 +62,14 @@ export async function PUT(req: NextRequest) {
       });
     }
 
-    // 2. Update Principal Profile
+    // 2. Update Principal Profile (Hanya CMS Publik: position & message; foto personal dikelola mandiri via User.photo)
     let principal = await prisma.principalProfile.findFirst();
-    const activePrincipalUser = await getActivePrincipal();
 
     if (principal) {
-      // Jika foto diganti dan foto lama tersimpan di /uploads/, hapus file lama
-      if (principal_photo && principal.photo && principal.photo !== principal_photo) {
-        await deleteUploadedFile(principal.photo);
-      }
-
       principal = await prisma.principalProfile.update({
         where: { id: principal.id },
         data: {
-          name: activePrincipalUser?.name || principal.name,
           position: principal_position ?? 'Kepala SMA Negeri 18 Bombana',
-          photo: principal_photo !== undefined ? principal_photo : principal.photo,
           message: principal_message ?? principal.message,
         },
       });

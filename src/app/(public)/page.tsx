@@ -101,7 +101,8 @@ export default async function HomePage() {
   const principalMessage =
     principalProfile?.message ||
     'Mari kita jadikan sekolah sebagai tempat untuk tumbuh, belajar, berkarya, dan mempersiapkan masa depan dengan penuh integritas dan kecintaan pada lingkungan hidup.';
-  const principalPhoto = principalProfile?.photo || '/images/kepala-sekolah.jpg';
+  const principalPhoto =
+    activePrincipal?.photo || principalProfile?.photo || '/images/kepala-sekolah.jpg';
 
   const fourPillars = [
     {

@@ -203,6 +203,16 @@ export async function PUT(
       },
     });
 
+    // SOT Rule: Jika Student.name diubah, sinkronkan User.name akun login siswa terkait sebagai data turunan
+    if (existingStudent.user_id && updateData.name) {
+      await prisma.user.update({
+        where: { id: existingStudent.user_id },
+        data: { name: updateData.name },
+      }).catch((err) => {
+        console.warn('Warning: Gagal menyinkronkan nama ke akun User siswa:', err);
+      });
+    }
+
     return NextResponse.json({
       success: true,
       message: `Data siswa "${updated.name}" berhasil diperbarui.`,

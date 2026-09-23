@@ -34,10 +34,6 @@ export default function PengaturanBerandaPage() {
   const [principalPhoto, setPrincipalPhoto] = useState('');
   const [principalMessage, setPrincipalMessage] = useState('');
 
-  // Foto Kepsek Upload state
-  const [kepsekFile, setKepsekFile] = useState<File | null>(null);
-  const [kepsekPreview, setKepsekPreview] = useState('');
-
   // 3. Background Home fields
   const [bgImage, setBgImage] = useState('');
   const [bgActive, setBgActive] = useState(true);
@@ -59,11 +55,11 @@ export default function PengaturanBerandaPage() {
           setSchoolName(data.school.school_name || '');
           setTagline(data.school.tagline || '');
         }
-        if (data.principal) {
-          setPrincipalName(data.activePrincipal?.name || data.principal.name || 'Belum ditetapkan');
-          setPrincipalPosition(data.principal.position || 'Kepala SMA Negeri 18 Bombana');
-          setPrincipalPhoto(data.principal.photo || '');
-          setPrincipalMessage(data.principal.message || '');
+        if (data.principal || data.activePrincipal) {
+          setPrincipalName(data.activePrincipal?.name || 'Belum ditetapkan');
+          setPrincipalPosition(data.principal?.position || 'Kepala SMA Negeri 18 Bombana');
+          setPrincipalPhoto(data.activePrincipal?.photo || data.principal?.photo || '/images/kepala-sekolah.jpg');
+          setPrincipalMessage(data.principal?.message || '');
         }
         if (data.background) {
           setBgImage(data.background.image || '');
@@ -77,21 +73,6 @@ export default function PengaturanBerandaPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // --- HANDLER FOTO KEPALA SEKOLAH ---
-  const handleKepsekFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg('Ukuran foto Kepala Sekolah maksimal 5 MB.');
-      return;
-    }
-
-    setKepsekFile(file);
-    setKepsekPreview(URL.createObjectURL(file));
-    setErrorMsg('');
   };
 
   // --- HANDLER BACKGROUND HOME ---
@@ -202,7 +183,7 @@ export default function PengaturanBerandaPage() {
     }
   };
 
-  // --- HANDLER SIMPAN HERO & KEPALA SEKOLAH ---
+  // --- HANDLER SIMPAN HERO & KEPALA SEKOLAH (CMS SAJA) ---
   const handleSaveHeroAndKepsek = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -210,45 +191,19 @@ export default function PengaturanBerandaPage() {
     setSuccessMsg('');
 
     try {
-      let finalPhoto = principalPhoto;
-
-      // Jika ada file foto kepala sekolah baru, upload dulu
-      if (kepsekFile) {
-        const formData = new FormData();
-        formData.append('file', kepsekFile);
-        formData.append('folder', 'principal');
-
-        const uploadRes = await fetch('/api/admin/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok || !uploadData.url) {
-          setErrorMsg(uploadData.error || 'Gagal mengupload foto Kepala Sekolah.');
-          setSaving(false);
-          return;
-        }
-        finalPhoto = uploadData.url;
-      }
-
       const res = await fetch('/api/admin/beranda', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           school_name: schoolName,
           tagline,
-          principal_name: principalName,
           principal_position: principalPosition,
-          principal_photo: finalPhoto,
           principal_message: principalMessage,
         }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setPrincipalPhoto(finalPhoto);
-        setKepsekFile(null);
-        setKepsekPreview('');
         setSuccessMsg('Pengaturan Beranda & Sambutan Kepala Sekolah berhasil disimpan!');
         setTimeout(() => setSuccessMsg(''), 4000);
       } else {
@@ -321,7 +276,7 @@ export default function PengaturanBerandaPage() {
               : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
-          Profil &amp; Foto Kepala Sekolah
+          Sambutan &amp; Info Kepala Sekolah
         </button>
         <button
           type="button"
@@ -384,24 +339,29 @@ export default function PengaturanBerandaPage() {
         </form>
       )}
 
-      {/* TAB 2: PROFIL & FOTO KEPALA SEKOLAH */}
+      {/* TAB 2: SAMBUTAN & INFORMASI PUBLIK KEPALA SEKOLAH (CMS) */}
       {activeTab === 'kepsek' && (
         <form onSubmit={handleSaveHeroAndKepsek} className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-6">
           <h2 className="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
             <UserCheck className="w-5 h-5 text-emerald-600" />
-            <span>Sambutan &amp; Foto Kepala Sekolah</span>
+            <span>Sambutan &amp; Informasi Publik Kepala Sekolah</span>
           </h2>
 
-          {/* Section Upload Foto Kepsek */}
-          <div className="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-100 space-y-4">
-            <label className="block text-xs sm:text-sm font-bold text-slate-800">
-              Upload Foto Kepala Sekolah
-            </label>
+          {/* Section Foto Personal Kepsek (Read-Only Preview dari Akun Kepala Sekolah) */}
+          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs sm:text-sm font-bold text-slate-800">
+                Foto Personal Kepala Sekolah
+              </label>
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                Sumber: Akun Kepala Sekolah (Read-Only)
+              </span>
+            </div>
             <div className="flex flex-col sm:flex-row items-center gap-6">
               {/* Box Preview */}
-              <div className="w-28 h-28 rounded-2xl bg-white border-2 border-emerald-200 shadow-sm overflow-hidden flex items-center justify-center shrink-0">
+              <div className="w-28 h-28 rounded-2xl bg-white border-2 border-slate-200 shadow-sm overflow-hidden flex items-center justify-center shrink-0">
                 <SafeImage
-                  src={kepsekPreview || principalPhoto}
+                  src={principalPhoto}
                   alt={principalName}
                   className="w-full h-full object-cover object-top"
                   fallback={
@@ -413,40 +373,17 @@ export default function PengaturanBerandaPage() {
                 />
               </div>
 
-              {/* Upload Input & Description */}
-              <div className="space-y-2 flex-1 text-center sm:text-left">
-                <p className="text-xs text-slate-600">
-                  Pilih file foto resmi Kepala Sekolah (format JPG, JPEG, PNG, atau WEBP, maks. 5 MB).
+              {/* Deskripsi Aturan SOT Foto */}
+              <div className="space-y-1.5 flex-1 text-center sm:text-left">
+                <p className="text-xs font-bold text-slate-800">
+                  {principalName}
                 </p>
-                <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
-                  <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-emerald-300 hover:bg-emerald-50 text-emerald-800 text-xs font-bold cursor-pointer transition-colors shadow-2xs">
-                    <Upload className="w-4 h-4" />
-                    <span>Pilih Foto Baru</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
-                      onChange={handleKepsekFileChange}
-                    />
-                  </label>
-                  {kepsekFile && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setKepsekFile(null);
-                        setKepsekPreview('');
-                      }}
-                      className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold"
-                    >
-                      Batal Ganti
-                    </button>
-                  )}
-                </div>
-                {kepsekFile && (
-                  <span className="text-[11px] text-emerald-700 block font-medium">
-                    File baru siap disimpan: {kepsekFile.name}
-                  </span>
-                )}
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Foto personal Kepala Sekolah dikelola secara mandiri oleh Kepala Sekolah aktif melalui menu <strong>Profil Saya</strong> (<code className="text-xs bg-slate-200/70 px-1 py-0.5 rounded text-emerald-800">/dashboard/profile</code>).
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Admin Beranda bertugas mengelola Pesan Sambutan dan Jabatan Resmi untuk kebutuhan konten beranda sekolah (CMS publik).
+                </p>
               </div>
             </div>
           </div>
@@ -509,7 +446,7 @@ export default function PengaturanBerandaPage() {
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm transition-all disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
-              <span>{saving ? 'Menyimpan...' : 'Simpan Sambutan & Foto'}</span>
+              <span>{saving ? 'Menyimpan...' : 'Simpan Sambutan & Info'}</span>
             </button>
           </div>
         </form>

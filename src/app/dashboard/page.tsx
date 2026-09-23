@@ -41,11 +41,17 @@ export default async function DashboardPage() {
       role: true,
       email: true,
       is_active: true,
+      force_password_change: true,
     },
   });
 
   if (!dbUser || !dbUser.is_active) {
     redirect('/login?error=Akun Anda tidak aktif atau tidak ditemukan.');
+  }
+
+  // Jika akun diwajibkan ganti password, cegah akses ke dashboard dan arahkan langsung ke profil
+  if (dbUser.force_password_change) {
+    redirect('/dashboard/profile?forceChange=true');
   }
 
   const currentUser = {

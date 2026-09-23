@@ -35,10 +35,12 @@ import {
   Check,
   Download,
   Plus,
-  Pencil,
   Trash2,
   Loader2,
+  User,
+  Pencil,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface Props {
   user: {
@@ -441,6 +443,7 @@ export default function CurriculumView({ user }: Props) {
     { id: 'laporan', label: 'Laporan Kurikulum', icon: FileText },
     { id: 'notifikasi', label: 'Notifikasi', icon: Bell },
     { id: 'pengaturan', label: 'Pengaturan Akun', icon: Settings },
+    { id: 'profil', label: 'Profil Saya', icon: User, href: '/dashboard/profile' },
   ];
 
   // Filtered Schedules
@@ -599,9 +602,18 @@ export default function CurriculumView({ user }: Props) {
         </div>
 
         {/* User Info Bar */}
-        <div className="px-5 py-3 bg-emerald-50/50 border-b border-emerald-100/60">
-          <p className="text-xs font-bold text-slate-800 truncate">{user.name}</p>
-          <p className="text-[11px] text-slate-500 truncate">@{user.username}</p>
+        <div className="px-5 py-3 bg-emerald-50/50 border-b border-emerald-100/60 flex items-center justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-slate-800 truncate">{user.name}</p>
+            <p className="text-[11px] text-slate-500 truncate">@{user.username}</p>
+          </div>
+          <Link
+            href="/dashboard/profile"
+            className="p-1.5 rounded-lg bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors shadow-2xs shrink-0"
+            title="Profil Saya"
+          >
+            <User className="w-4 h-4" />
+          </Link>
         </div>
 
         {/* Daftar Menu Navigasi */}
@@ -609,6 +621,18 @@ export default function CurriculumView({ user }: Props) {
           {navMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            if ((item as any).href) {
+              return (
+                <Link
+                  key={item.id}
+                  href={(item as any).href}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-emerald-800 hover:bg-slate-100/80 transition-colors"
+                >
+                  <Icon className="w-4 h-4 shrink-0 text-slate-400" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            }
             return (
               <button
                 key={item.id}
@@ -676,6 +700,19 @@ export default function CurriculumView({ user }: Props) {
               {navMenuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
+                if ((item as any).href) {
+                  return (
+                    <Link
+                      key={item.id}
+                      href={(item as any).href}
+                      onClick={() => setIsMobileNavOpen(false)}
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                }
                 return (
                   <button
                     key={item.id}

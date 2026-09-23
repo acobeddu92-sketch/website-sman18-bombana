@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import LogoutButton from './LogoutButton';
 import { UserRole } from '@/lib/constants';
 import {
@@ -13,6 +14,7 @@ import {
   Calendar,
   Layers,
   Award,
+  User as UserIcon,
 } from 'lucide-react';
 
 interface Props {
@@ -74,6 +76,13 @@ export default function PembinaView({ user, type }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <Link
+              href="/dashboard/profile"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
+            >
+              <UserIcon className="w-4 h-4 text-slate-500" />
+              <span>Profil Saya</span>
+            </Link>
             <a
               href="/"
               className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors"

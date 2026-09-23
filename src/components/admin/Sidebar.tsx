@@ -15,6 +15,7 @@ import {
   GraduationCap,
   ExternalLink,
   X,
+  User,
 } from 'lucide-react';
 import LogoutButton from '../dashboard/LogoutButton';
 
@@ -45,6 +46,7 @@ export default function Sidebar({ isOpen, onClose, adminUser, logo }: SidebarPro
     { name: 'Informasi Umum', href: '/admin/informasi', icon: Bell },
     { name: 'PPDB', href: '/admin/ppdb', icon: GraduationCap },
     { name: 'Pengaturan', href: '/admin/pengaturan', icon: Settings },
+    { name: 'Profil Saya', href: '/dashboard/profile', icon: User },
   ];
 
   return (

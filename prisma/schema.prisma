@@ -13,10 +13,19 @@ model User {
   username      String   @unique
   email         String   @unique
   password_hash String
-  role          String // "administrator" | "kepala_sekolah" | "wakasek_kurikulum" | "wakasek_kesiswaan" | "kepala_perpustakaan" | "guru_mapel" | "wali_kelas" | "guru_bk" | "siswa"
-  is_active     Boolean  @default(true)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  role                  String // "administrator" | "kepala_sekolah" | "wakasek_kurikulum" | "wakasek_kesiswaan" | "kepala_perpustakaan" | "guru_mapel" | "wali_kelas" | "guru_bk" | "siswa"
+  is_active             Boolean   @default(true)
+  nip                   String?   @unique
+  nik                   String?
+  photo                 String?
+  phone                 String?
+  gender                String?
+  birth_place           String?
+  birth_date            DateTime?
+  address               String?
+  force_password_change Boolean   @default(false)
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
 
   // Relasi Modul Pembelajaran, Absensi, Piket, BK & Pelanggaran
   student_profile      Student?
