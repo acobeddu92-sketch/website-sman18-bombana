@@ -10,6 +10,7 @@ import BKView from '@/components/dashboard/BKView';
 import StudentView from '@/components/dashboard/StudentView';
 import PembinaView from '@/components/dashboard/PembinaView';
 import CurriculumView from '@/components/dashboard/CurriculumView';
+import StudentAffairsView from '@/components/dashboard/StudentAffairsView';
 
 export const dynamic = 'force-dynamic';
 
@@ -219,12 +220,15 @@ export default async function DashboardPage() {
     return <CurriculumView user={currentUser} />;
   }
 
+  if (session.role === 'wakasek_kesiswaan') {
+    return <StudentAffairsView user={currentUser} />;
+  }
+
   if (
     [
       'guru_mapel',
       'guru',
       'wali_kelas',
-      'wakasek_kesiswaan',
       'kepala_perpustakaan',
     ].includes(session.role)
   ) {
