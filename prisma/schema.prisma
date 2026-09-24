@@ -41,6 +41,8 @@ model User {
   violation_follow_ups TindakLanjutPelanggaran[]
   counseling_sessions  BimbinganBK[]
   created_sk           SuratKeputusan[]
+  borrowed_books       BookLoan[]                @relation("UserBookLoans")
+  handled_book_loans   BookLoan[]                @relation("HandledBookLoans")
 
   @@map("users")
 }
@@ -197,6 +199,7 @@ model Student {
   attendance_items MonthlyAttendanceItem[]
   violations       PelanggaranSiswa[]
   counselings      BimbinganBK[]
+  book_loans       BookLoan[]
 
   @@index([class_id])
   @@index([name])
@@ -469,4 +472,87 @@ model SuratKeputusan {
 
   @@index([created_by_id])
   @@map("surat_keputusan")
+}
+
+// ==========================================
+// 12. PERPUSTAKAAN: KATEGORI BUKU
+// ==========================================
+model BookCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relasi
+  books Book[]
+
+  @@map("book_categories")
+}
+
+// ==========================================
+// 13. PERPUSTAKAAN: KOLEKSI BUKU
+// ==========================================
+model Book {
+  id              String   @id @default(cuid())
+  book_code       String   @unique
+  isbn            String?
+  title           String
+  author          String
+  publisher       String?
+  year            Int?
+  category_id     String
+  total_stock     Int      @default(1)
+  available_stock Int      @default(1)
+  shelf_location  String?
+  description     String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relasi
+  category BookCategory @relation(fields: [category_id], references: [id], onDelete: Restrict)
+  loans    BookLoan[]
+
+  @@index([category_id])
+  @@index([title])
+  @@index([author])
+  @@map("books")
+}
+
+// ==========================================
+// 14. PERPUSTAKAAN: TRANSAKSI PEMINJAMAN & PENGEMBALIAN
+// ==========================================
+model BookLoan {
+  id            String    @id @default(cuid())
+  loan_code     String    @unique
+  book_id       String
+  member_type   String
+  student_id    String?
+  user_id       String?
+  borrower_name String
+  loan_date     DateTime  @default(now())
+  due_date      DateTime
+  return_date   DateTime?
+  status        String    @default("Dipinjam")
+  fine_amount   Int       @default(0)
+  notes         String?
+  handled_by_id String
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relasi
+  book       Book     @relation(fields: [book_id], references: [id], onDelete: Restrict)
+  student    Student? @relation(fields: [student_id], references: [id], onDelete: SetNull)
+  user       User?    @relation("UserBookLoans", fields: [user_id], references: [id], onDelete: SetNull)
+  handled_by User     @relation("HandledBookLoans", fields: [handled_by_id], references: [id], onDelete: Restrict)
+
+  @@index([book_id])
+  @@index([student_id])
+  @@index([user_id])
+  @@index([handled_by_id])
+  @@index([status])
+  @@index([loan_date])
+  @@index([due_date])
+  @@map("book_loans")
 }
