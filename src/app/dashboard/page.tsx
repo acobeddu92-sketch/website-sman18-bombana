@@ -12,6 +12,7 @@ import PembinaView from '@/components/dashboard/PembinaView';
 import CurriculumView from '@/components/dashboard/CurriculumView';
 import StudentAffairsView from '@/components/dashboard/StudentAffairsView';
 import HomeroomView from '@/components/dashboard/HomeroomView';
+import LibraryView from '@/components/dashboard/LibraryView';
 
 export const dynamic = 'force-dynamic';
 
@@ -231,11 +232,14 @@ export default async function DashboardPage() {
     return <HomeroomView user={currentUser} />;
   }
 
+  if (session.role === 'kepala_perpustakaan') {
+    return <LibraryView user={currentUser} />;
+  }
+
   if (
     [
       'guru_mapel',
       'guru',
-      'kepala_perpustakaan',
     ].includes(session.role)
   ) {
     return <TeacherView user={currentUser} />;
