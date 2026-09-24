@@ -11,6 +11,7 @@ import StudentView from '@/components/dashboard/StudentView';
 import PembinaView from '@/components/dashboard/PembinaView';
 import CurriculumView from '@/components/dashboard/CurriculumView';
 import StudentAffairsView from '@/components/dashboard/StudentAffairsView';
+import HomeroomView from '@/components/dashboard/HomeroomView';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,7 @@ export default async function DashboardPage() {
       username: true,
       role: true,
       email: true,
+      nip: true,
       is_active: true,
       force_password_change: true,
     },
@@ -61,6 +63,7 @@ export default async function DashboardPage() {
     username: dbUser.username,
     role: dbUser.role as any,
     email: dbUser.email,
+    nip: dbUser.nip,
   };
 
   // Ambil data komprehensif untuk Kepala Sekolah
@@ -224,11 +227,14 @@ export default async function DashboardPage() {
     return <StudentAffairsView user={currentUser} />;
   }
 
+  if (session.role === 'wali_kelas') {
+    return <HomeroomView user={currentUser} />;
+  }
+
   if (
     [
       'guru_mapel',
       'guru',
-      'wali_kelas',
       'kepala_perpustakaan',
     ].includes(session.role)
   ) {
