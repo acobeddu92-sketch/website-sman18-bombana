@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const teacherId = searchParams.get('teacher_id')?.trim();
   const classId = searchParams.get('class_id')?.trim();
+  const period = searchParams.get('period')?.trim();
   const search = searchParams.get('q')?.trim() || '';
 
   try {
@@ -26,6 +27,17 @@ export async function GET(request: NextRequest) {
 
     if (classId && classId !== 'all') {
       whereClause.class_id = classId;
+    }
+
+    if (period && period !== 'all') {
+      const now = new Date();
+      if (period === '7d') {
+        whereClause.created_at = { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) };
+      } else if (period === '30d') {
+        whereClause.created_at = { gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) };
+      } else if (period === '90d') {
+        whereClause.created_at = { gte: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) };
+      }
     }
 
     if (search) {

@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       prisma.announcement.findMany({
         where: { is_published: true },
         orderBy: { published_at: 'desc' },
-        take: 10,
+        take: 50,
       }),
       getActivePrincipal(),
       prisma.principalProfile.findFirst().catch(() => null),
@@ -140,7 +140,9 @@ export async function GET(request: NextRequest) {
 
     // Masalah Akademik
     let issueStatus: 'Normal' | 'Perlu Perhatian' | 'Belum Lengkap' | 'Belum Tersedia' = 'Normal';
-    if (academicIssuesCount > 0) {
+    if (totalTeachers === 0 && totalClasses === 0) {
+      issueStatus = 'Belum Tersedia';
+    } else if (academicIssuesCount > 0) {
       issueStatus = 'Perlu Perhatian';
     }
 
