@@ -43,6 +43,7 @@ model User {
   created_sk           SuratKeputusan[]
   borrowed_books       BookLoan[]                @relation("UserBookLoans")
   handled_book_loans   BookLoan[]                @relation("HandledBookLoans")
+  uploaded_ebooks      EBook[]                   @relation("UserUploadedEBooks")
 
   @@map("users")
 }
@@ -555,4 +556,60 @@ model BookLoan {
   @@index([loan_date])
   @@index([due_date])
   @@map("book_loans")
+}
+
+// ==========================================
+// 15. PERPUSTAKAAN: KATEGORI BUKU ELEKTRONIK (E-BOOK)
+// ==========================================
+model EBookCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  ebooks EBook[]
+
+  @@map("ebook_categories")
+}
+
+// ==========================================
+// 16. PERPUSTAKAAN: KOLEKSI BUKU ELEKTRONIK (E-BOOK)
+// ==========================================
+model EBook {
+  id          String  @id @default(cuid())
+  title       String
+  author      String
+  publisher   String?
+  year        Int?
+  isbn        String?
+  description String?
+  category_id String
+
+  file_url  String
+  file_name String
+  file_size Int
+  mime_type String
+
+  cover_image String?
+
+  download_count Int @default(0)
+
+  is_published Boolean @default(false)
+
+  uploaded_by_id String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  category    EBookCategory @relation(fields: [category_id], references: [id], onDelete: Restrict)
+  uploaded_by User          @relation("UserUploadedEBooks", fields: [uploaded_by_id], references: [id], onDelete: Restrict)
+
+  @@index([category_id])
+  @@index([title])
+  @@index([author])
+  @@index([uploaded_by_id])
+  @@index([is_published])
+  @@map("ebooks")
 }
