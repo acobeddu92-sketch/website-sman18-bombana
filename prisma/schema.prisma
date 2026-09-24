@@ -8,11 +8,11 @@ generator client {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  name          String
-  username      String   @unique
-  email         String   @unique
-  password_hash String
+  id                    String    @id @default(cuid())
+  name                  String
+  username              String    @unique
+  email                 String    @unique
+  password_hash         String
   role                  String // "administrator" | "kepala_sekolah" | "wakasek_kurikulum" | "wakasek_kesiswaan" | "kepala_perpustakaan" | "guru_mapel" | "wali_kelas" | "guru_bk" | "siswa"
   is_active             Boolean   @default(true)
   nip                   String?   @unique
@@ -40,6 +40,7 @@ model User {
   handled_violations   PelanggaranSiswa[]        @relation("HandledViolations")
   violation_follow_ups TindakLanjutPelanggaran[]
   counseling_sessions  BimbinganBK[]
+  created_sk           SuratKeputusan[]
 
   @@map("users")
 }
@@ -444,4 +445,28 @@ model BimbinganBK {
   @@index([date])
   @@index([status])
   @@map("bimbingan_bk")
+}
+
+// ==========================================
+// 8. SURAT KEPUTUSAN (SK) KURIKULUM
+// ==========================================
+model SuratKeputusan {
+  id                 String   @id @default(cuid())
+  nomor              String   @unique
+  tanggal            String // e.g. "2026-09-24" atau "24 September 2026"
+  tentang            String // e.g. "Pembagian Tugas Mengajar Semester Ganjil TA 2026/2027"
+  template_file_name String
+  template_file_url  String
+  document_file_name String
+  document_file_url  String
+  placeholders_used  String? // JSON string mapping placeholder dan nilai
+  created_by_id      String
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  // Relasi: pembuat SK (User)
+  creator User @relation(fields: [created_by_id], references: [id], onDelete: Restrict)
+
+  @@index([created_by_id])
+  @@map("surat_keputusan")
 }

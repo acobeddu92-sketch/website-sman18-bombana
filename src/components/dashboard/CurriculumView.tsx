@@ -41,6 +41,7 @@ import {
   Pencil,
   ExternalLink,
   FileCheck,
+  FileUp,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -64,7 +65,7 @@ type CurriculumTab =
   | 'perangkat'
   | 'monitoring'
   | 'rekap'
-  | 'laporan'
+  | 'sk'
   | 'notifikasi'
   | 'pengaturan';
 
@@ -168,6 +169,188 @@ export default function CurriculumView({ user }: Props) {
   const [monitoringStatusFilter, setMonitoringStatusFilter] = useState('all');
   const [monitoringTeacherFilter, setMonitoringTeacherFilter] = useState('all');
   const [monitoringSearch, setMonitoringSearch] = useState('');
+
+  // SK (Surat Keputusan) State
+  const [skSubTab, setSkSubTab] = useState<'arsip' | 'buat'>('arsip');
+  const [skList, setSkList] = useState<any[]>([]);
+  const [isLoadingSK, setIsLoadingSK] = useState(false);
+  const [skError, setSkError] = useState<string | null>(null);
+  const [skSearch, setSkSearch] = useState('');
+  const [skYearFilter, setSkYearFilter] = useState('all');
+  const [schoolHints, setSchoolHints] = useState<Record<string, string>>({});
+
+  // Form Buat SK State
+  const [templateFile, setTemplateFile] = useState<File | null>(null);
+  const [templateUrl, setTemplateUrl] = useState('');
+  const [templateFileName, setTemplateFileName] = useState('');
+  const [isUploadingTemplate, setIsUploadingTemplate] = useState(false);
+  const [uploadTemplateError, setUploadTemplateError] = useState('');
+  const [detectedPlaceholders, setDetectedPlaceholders] = useState<string[]>([]);
+  const [nomorSK, setNomorSK] = useState('');
+  const [tanggalSK, setTanggalSK] = useState(new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }));
+  const [tentangSK, setTentangSK] = useState('');
+  const [placeholderInputs, setPlaceholderInputs] = useState<Record<string, string>>({});
+  const [isGeneratingSK, setIsGeneratingSK] = useState(false);
+  const [generateError, setGenerateError] = useState('');
+  const [generatedSKResult, setGeneratedSKResult] = useState<any | null>(null);
+
+  // Modals SK
+  const [selectedSKDetail, setSelectedSKDetail] = useState<any | null>(null);
+  const [skToDelete, setSkToDelete] = useState<any | null>(null);
+  const [isDeletingSK, setIsDeletingSK] = useState(false);
+
+  // Fetch SK List
+  const fetchSKData = async () => {
+    setIsLoadingSK(true);
+    setSkError(null);
+    try {
+      const q = skSearch ? `?q=${encodeURIComponent(skSearch)}` : '';
+      const res = await fetch(`/api/curriculum/sk${q}`);
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setSkList(json.skList || []);
+        if (json.schoolHints) setSchoolHints(json.schoolHints);
+      } else {
+        setSkError(json.error || 'Gagal memuat arsip SK.');
+      }
+    } catch {
+      setSkError('Gagal terhubung ke server.');
+    } finally {
+      setIsLoadingSK(false);
+    }
+  };
+
+  // Upload & Analyze Template
+  const handleUploadTemplate = async (file: File) => {
+    if (!file) return;
+    setTemplateFile(file);
+    setIsUploadingTemplate(true);
+    setUploadTemplateError('');
+    setGenerateError('');
+    setGeneratedSKResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/curriculum/sk/upload-template', {
+        method: 'POST',
+        body: formData,
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setTemplateUrl(json.templateUrl);
+        setTemplateFileName(json.templateFileName);
+        setDetectedPlaceholders(json.placeholders || []);
+
+        // Prefill default placeholders jika ditemukan di template
+        const prefill: Record<string, string> = {};
+        (json.placeholders || []).forEach((p: string) => {
+          if (p === 'NOMOR_SK') prefill[p] = nomorSK;
+          else if (p === 'TANGGAL_SK') prefill[p] = tanggalSK;
+          else if (p === 'TENTANG') prefill[p] = tentangSK;
+          else if (json.schoolHints && json.schoolHints[p]) {
+            prefill[p] = json.schoolHints[p];
+          } else {
+            prefill[p] = '';
+          }
+        });
+        setPlaceholderInputs(prefill);
+      } else {
+        setUploadTemplateError(json.error || 'Gagal memproses template.');
+        setTemplateFile(null);
+      }
+    } catch {
+      setUploadTemplateError('Terjadi kesalahan jaringan saat mengunggah template.');
+      setTemplateFile(null);
+    } finally {
+      setIsUploadingTemplate(false);
+    }
+  };
+
+  // Generate & Save SK
+  const handleGenerateSK = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nomorSK.trim() || !tanggalSK.trim() || !tentangSK.trim()) {
+      alert('Nomor SK, Tanggal SK, dan Tentang wajib diisi.');
+      return;
+    }
+    if (!templateUrl) {
+      alert('Template DOCX belum diunggah.');
+      return;
+    }
+
+    setIsGeneratingSK(true);
+    setGenerateError('');
+    setGeneratedSKResult(null);
+
+    try {
+      const payload = {
+        nomor: nomorSK.trim(),
+        tanggal: tanggalSK.trim(),
+        tentang: tentangSK.trim(),
+        templateUrl,
+        templateFileName,
+        placeholderValues: placeholderInputs,
+      };
+
+      const res = await fetch('/api/curriculum/sk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setGeneratedSKResult(json);
+        setSuccessMsg(json.message || 'SK berhasil digenerate dan disimpan ke arsip.');
+        fetchSKData();
+      } else {
+        setGenerateError(json.error || 'Gagal menghasilkan SK.');
+      }
+    } catch {
+      setGenerateError('Terjadi kesalahan sistem saat generate SK.');
+    } finally {
+      setIsGeneratingSK(false);
+    }
+  };
+
+  // Delete SK
+  const handleDeleteSK = async () => {
+    if (!skToDelete) return;
+    setIsDeletingSK(true);
+    try {
+      const res = await fetch(`/api/curriculum/sk/${skToDelete.id}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setSuccessMsg(json.message || 'Arsip SK berhasil dihapus.');
+        setSkToDelete(null);
+        fetchSKData();
+      } else {
+        alert(json.error || 'Gagal menghapus arsip SK.');
+      }
+    } catch {
+      alert('Terjadi kesalahan saat menghapus SK.');
+    } finally {
+      setIsDeletingSK(false);
+    }
+  };
+
+  // Reset Create SK Form
+  const handleResetCreateSK = () => {
+    setTemplateFile(null);
+    setTemplateUrl('');
+    setTemplateFileName('');
+    setDetectedPlaceholders([]);
+    setUploadTemplateError('');
+    setNomorSK('');
+    setTanggalSK(new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }));
+    setTentangSK('');
+    setPlaceholderInputs({});
+    setGeneratedSKResult(null);
+    setGenerateError('');
+  };
 
   // Report Section Selector
   const [reportSection, setReportSection] = useState<
@@ -527,7 +710,7 @@ export default function CurriculumView({ user }: Props) {
     { id: 'perangkat', label: 'Perangkat Pembelajaran', icon: FolderOpen },
     { id: 'monitoring', label: 'Monitoring Pembelajaran', icon: CheckCircle2 },
     { id: 'rekap', label: 'Rekap Akademik', icon: Layers },
-    { id: 'laporan', label: 'Laporan Kurikulum', icon: FileText },
+    { id: 'sk', label: 'SK', icon: FileCheck },
     { id: 'notifikasi', label: 'Notifikasi', icon: Bell },
     { id: 'pengaturan', label: 'Pengaturan Akun', icon: Settings },
   ];
@@ -2568,273 +2751,534 @@ export default function CurriculumView({ user }: Props) {
         )}
 
         {/* ------------------------------------------------------------- */}
-        {/* TAB 10: LAPORAN KURIKULUM */}
+        {/* TAB 10: SURAT KEPUTUSAN (SK) KURIKULUM */}
         {/* ------------------------------------------------------------- */}
-        {activeTab === 'laporan' && (
+        {activeTab === 'sk' && (
           <div className="space-y-6 animate-fadeIn">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+            {/* Header Modul SK */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
-                  <FileText className="w-7 h-7 text-emerald-600" />
-                  <span>Pusat Laporan Eksekutif Kurikulum</span>
+                  <FileCheck className="w-7 h-7 text-emerald-600" />
+                  <span>Surat Keputusan (SK) Kurikulum</span>
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Kompilasi ringkasan data resmi kurikulum sekolah siap cetak untuk laporan berkala.
-                </p>
-              </div>
-              <button
-                onClick={() => window.print()}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Cetak Dokumen Laporan</span>
-              </button>
-            </div>
-
-            {/* Sub-report Selector */}
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap gap-2 print:hidden">
-              <button
-                onClick={() => setReportSection('eksekutif')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                  reportSection === 'eksekutif' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Laporan Lengkap
-              </button>
-              <button
-                onClick={() => setReportSection('jadwal')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                  reportSection === 'jadwal' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Laporan Jadwal
-              </button>
-              <button
-                onClick={() => setReportSection('tugas')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                  reportSection === 'tugas' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Rekap Pembagian Tugas
-              </button>
-              <button
-                onClick={() => setReportSection('kelas')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                  reportSection === 'kelas' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Rekap Kelas &amp; Rombel
-              </button>
-              <button
-                onClick={() => setReportSection('perangkat')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                  reportSection === 'perangkat' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Rekap Perangkat Ajar
-              </button>
-              <button
-                onClick={() => setReportSection('monitoring')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                  reportSection === 'monitoring' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Rekap Monitoring Akademik
-              </button>
-            </div>
-
-            {/* Lembar Cetak Laporan Resmi */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-xs space-y-6 print:border-none print:shadow-none">
-              {/* Kop Surat Resmi */}
-              <div className="text-center pb-6 border-b border-slate-200">
-                <span className="text-xs font-bold tracking-widest text-emerald-700 uppercase">
-                  PEMERINTAH PROVINSI SULAWESI TENGGARA • DINAS PENDIDIKAN DAN KEBUDAYAAN
-                </span>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1 uppercase">
-                  SMA NEGERI 18 BOMBANA
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Laporan Resmi Monitoring dan Evaluasi Kurikulum Semester • Tahun Ajaran 2026/2027
+                  Pusat pembuatan dokumen SK berbasis template DOCX, penggantian placeholder dinamis, dan pengarsipan resmi.
                 </p>
               </div>
 
-              {/* Bagian 1: Ringkasan Eksekutif */}
-              {(reportSection === 'eksekutif' || reportSection === 'monitoring') && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-1">
-                    I. Ringkasan Eksekutif Akademik
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                    <div className="p-3 bg-slate-50 rounded-xl">
-                      <span className="text-slate-400 block">Total Tenaga Pendidik</span>
-                      <strong className="text-slate-800 text-sm">{dashboardData?.stats?.totalTeachers || 0} Orang</strong>
-                    </div>
-                    <div className="p-3 bg-slate-50 rounded-xl">
-                      <span className="text-slate-400 block">Total Rombel Siswa</span>
-                      <strong className="text-slate-800 text-sm">{dashboardData?.stats?.totalClasses || 0} Kelas</strong>
-                    </div>
-                    <div className="p-3 bg-slate-50 rounded-xl">
-                      <span className="text-slate-400 block">Alokasi Sesi Jadwal</span>
-                      <strong className="text-slate-800 text-sm">{dashboardData?.stats?.totalActiveSchedules || 0} Sesi</strong>
-                    </div>
-                    <div className="p-3 bg-slate-50 rounded-xl">
-                      <span className="text-slate-400 block">Kelengkapan Perangkat</span>
-                      <strong className="text-slate-800 text-sm">{dashboardData?.stats?.materialsPercentage || 0}% Terpenuhi</strong>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Bagian 2: Rekapitulasi Beban Kerja Mengajar */}
-              {(reportSection === 'eksekutif' || reportSection === 'tugas') && (
-                <div className="space-y-3 pt-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-1">
-                    II. Rekapitulasi Pembagian Tugas &amp; Beban Kerja Mengajar Guru
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600">
-                          <th className="py-2 px-4">Nama Guru</th>
-                          <th className="py-2 px-4">Peran</th>
-                          <th className="py-2 px-4 text-center">Jumlah Sesi Jadwal</th>
-                          <th className="py-2 px-4 text-center">Perangkat Ajar</th>
-                          <th className="py-2 px-4 text-center">Tugas Diberikan</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {statisticsData?.teacherBreakdown?.map((t: any) => (
-                          <tr key={t.id}>
-                            <td className="py-2 px-4 font-semibold text-slate-800">{t.name}</td>
-                            <td className="py-2 px-4 text-slate-500">{t.role}</td>
-                            <td className="py-2 px-4 text-center font-bold">{t.scheduleCount} Sesi</td>
-                            <td className="py-2 px-4 text-center">{t.materialCount} Berkas</td>
-                            <td className="py-2 px-4 text-center">{t.assignmentCount} Tugas</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Bagian 3: Rekapitulasi Rombel */}
-              {(reportSection === 'eksekutif' || reportSection === 'kelas') && (
-                <div className="space-y-3 pt-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-1">
-                    III. Rekapitulasi Kondisi Kelas &amp; Rombel Siswa
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600">
-                          <th className="py-2 px-4">Kelas</th>
-                          <th className="py-2 px-4">Tingkat</th>
-                          <th className="py-2 px-4">Wali Kelas</th>
-                          <th className="py-2 px-4 text-center">Jumlah Siswa</th>
-                          <th className="py-2 px-4 text-center">Sesi Terjadwal</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {statisticsData?.classBreakdown?.map((c: any) => (
-                          <tr key={c.id}>
-                            <td className="py-2 px-4 font-bold text-slate-800">Kelas {c.name}</td>
-                            <td className="py-2 px-4 text-slate-500">Tingkat {c.grade}</td>
-                            <td className="py-2 px-4 text-slate-700">{c.homeroomTeacher}</td>
-                            <td className="py-2 px-4 text-center font-bold">{c.studentCount} Siswa</td>
-                            <td className="py-2 px-4 text-center">{c.scheduleCount} Sesi</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Bagian 4: Laporan Jadwal */}
-              {(reportSection === 'eksekutif' || reportSection === 'jadwal') && (
-                <div className="space-y-3 pt-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-1">
-                    IV. Laporan Master Jadwal Pelajaran Sekolah
-                  </h3>
-                  <div className="overflow-x-auto max-h-96">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600">
-                          <th className="py-2 px-4">Hari &amp; Jam</th>
-                          <th className="py-2 px-4">Mata Pelajaran</th>
-                          <th className="py-2 px-4">Guru Pengajar</th>
-                          <th className="py-2 px-4">Kelas &amp; Ruang</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {(schedulesData?.schedules || []).slice(0, 30).map((s: any) => (
-                          <tr key={s.id}>
-                            <td className="py-2 px-4 font-medium text-slate-800">{s.day}, {s.start_time} - {s.end_time} WITA</td>
-                            <td className="py-2 px-4 font-bold text-emerald-800">{s.subject}</td>
-                            <td className="py-2 px-4 text-slate-700">{s.teacher?.name}</td>
-                            <td className="py-2 px-4 text-slate-600">{s.class?.name} {s.room ? `(${s.room})` : ''}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Bagian 5: Rekap Perangkat Pembelajaran */}
-              {(reportSection === 'eksekutif' || reportSection === 'perangkat') && (
-                <div className="space-y-3 pt-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-1">
-                    V. Rekapitulasi Perangkat Pembelajaran Terdata
-                  </h3>
-                  <div className="overflow-x-auto max-h-80">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600">
-                          <th className="py-2 px-4">Judul Perangkat</th>
-                          <th className="py-2 px-4">Mata Pelajaran</th>
-                          <th className="py-2 px-4">Guru</th>
-                          <th className="py-2 px-4">Kelas</th>
-                          <th className="py-2 px-4">Tanggal</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {(materialsData?.materials || []).slice(0, 20).map((m: any) => (
-                          <tr key={m.id}>
-                            <td className="py-2 px-4 font-bold text-slate-800">{m.title}</td>
-                            <td className="py-2 px-4 text-emerald-800">{m.subject}</td>
-                            <td className="py-2 px-4 text-slate-700">{m.teacher?.name}</td>
-                            <td className="py-2 px-4 text-slate-600">{m.class?.name || 'Umum'}</td>
-                            <td className="py-2 px-4 text-slate-500">
-                              {new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Tanda Tangan */}
-              <div className="pt-8 flex justify-between text-xs text-slate-700 break-inside-avoid">
-                <div>
-                  <p>Mengetahui,</p>
-                  <p className="font-bold">{dashboardData?.principal?.position || 'Kepala Sekolah'}</p>
-                  <div className="h-16" />
-                  <p className="font-extrabold underline">{dashboardData?.principal?.name || 'Belum ditetapkan'}</p>
-                  <p className="text-slate-500">{dashboardData?.principal?.nip || 'NIP. -'}</p>
-                </div>
-                <div className="text-right">
-                  <p>Poleang, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  <p className="font-bold">Wakasek Bidang Kurikulum</p>
-                  <div className="h-16" />
-                  <p className="font-extrabold underline">{user.name}</p>
-                  <p className="text-slate-500">Akun: @{user.username}</p>
-                </div>
+              {/* Sub-tab Navigation */}
+              <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80">
+                <button
+                  onClick={() => setSkSubTab('arsip')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    skSubTab === 'arsip'
+                      ? 'bg-white text-emerald-800 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  📁 Arsip SK ({skList.length})
+                </button>
+                <button
+                  onClick={() => setSkSubTab('buat')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    skSubTab === 'buat'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Buat SK Baru</span>
+                </button>
               </div>
             </div>
+
+            {/* SUB-TAB A: BUAT SK BARU */}
+            {skSubTab === 'buat' && (
+              <div className="space-y-6">
+                {/* Petunjuk DOCX Templating */}
+                <div className="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-200/80 text-xs sm:text-sm text-emerald-900 flex items-start gap-3.5 shadow-2xs">
+                  <div className="p-2 rounded-xl bg-emerald-600 text-white shrink-0 mt-0.5 shadow-xs">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-bold text-emerald-950">Prinsip Template Microsoft Word (.docx)</p>
+                    <p className="text-emerald-800/90 text-xs leading-relaxed">
+                      Sistem <strong>tidak mengubah tata letak</strong> dokumen Anda. Seluruh kop surat resmi, margin, ukuran kertas, font, tabel konsideran, diktum, dan area tanda tangan dari berkas template DOCX dipertahankan 100%. Sistem hanya mendeteksi dan mengganti placeholder dengan format <code>{'{{NAMA_PLACEHOLDER}}'}</code>.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Form Buat SK */}
+                <form onSubmit={handleGenerateSK} className="space-y-6">
+                  {/* LANGKAH 1: Upload Format SK */}
+                  <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">
+                          Langkah 1
+                        </span>
+                        <h3 className="text-base font-bold text-slate-900 mt-1">
+                          Upload Format / Template SK (.docx)
+                        </h3>
+                      </div>
+                      {templateUrl && (
+                        <button
+                          type="button"
+                          onClick={handleResetCreateSK}
+                          className="text-xs text-rose-600 hover:underline font-semibold"
+                        >
+                          Ganti Template
+                        </button>
+                      )}
+                    </div>
+
+                    {!templateUrl ? (
+                      <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-emerald-500 transition-colors bg-slate-50/50">
+                        <input
+                          type="file"
+                          id="sk-template-file"
+                          accept=".docx"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadTemplate(file);
+                          }}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="sk-template-file"
+                          className="cursor-pointer flex flex-col items-center justify-center space-y-2"
+                        >
+                          <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
+                            {isUploadingTemplate ? (
+                              <Loader2 className="w-6 h-6 animate-spin" />
+                            ) : (
+                              <FileUp className="w-6 h-6" />
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-xs sm:text-sm font-bold text-slate-800 block">
+                              {isUploadingTemplate ? 'Menganalisis Template...' : 'Klik untuk Pilih Berkas Template DOCX'}
+                            </span>
+                            <span className="text-[11px] text-slate-400 block mt-0.5">
+                              Hanya format Microsoft Word (.docx), maksimal 10 MB
+                            </span>
+                          </div>
+                        </label>
+
+                        {uploadTemplateError && (
+                          <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                            {uploadTemplateError}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <FileCheck className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-800">{templateFileName}</p>
+                            <p className="text-[11px] text-emerald-700 font-semibold">
+                              {detectedPlaceholders.length} placeholder unik terdeteksi otomatis
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 max-w-md">
+                          {detectedPlaceholders.map((p) => (
+                            <span
+                              key={p}
+                              className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-white text-emerald-800 border border-emerald-200 shadow-2xs"
+                            >
+                              {'{{' + p + '}}'}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* LANGKAH 2: Pengisian Data SK (Aktif jika template sudah diunggah) */}
+                  {templateUrl && (
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+                      <div className="pb-3 border-b border-slate-100">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">
+                          Langkah 2
+                        </span>
+                        <h3 className="text-base font-bold text-slate-900 mt-1">
+                          Pengisian Data &amp; Variabel SK
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Lengkapi nilai data dasar dan seluruh placeholder yang dibutuhkan template.
+                        </p>
+                      </div>
+
+                      {/* Field Standar Administrasi */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Nomor SK <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={nomorSK}
+                            onChange={(e) => {
+                              setNomorSK(e.target.value);
+                              setPlaceholderInputs((prev) => ({ ...prev, NOMOR_SK: e.target.value }));
+                            }}
+                            placeholder="Contoh: 421.3/088/SMAN.18/2026"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Tanggal SK <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={tanggalSK}
+                            onChange={(e) => {
+                              setTanggalSK(e.target.value);
+                              setPlaceholderInputs((prev) => ({ ...prev, TANGGAL_SK: e.target.value }));
+                            }}
+                            placeholder="Contoh: 24 September 2026"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Tentang / Judul Penetapan SK <span className="text-rose-500">*</span>
+                        </label>
+                        <textarea
+                          required
+                          rows={2}
+                          value={tentangSK}
+                          onChange={(e) => {
+                            setTentangSK(e.target.value);
+                            setPlaceholderInputs((prev) => ({ ...prev, TENTANG: e.target.value }));
+                          }}
+                          placeholder="Contoh: Pembagian Tugas Guru Dalam Proses Pembelajaran Semester Ganjil Tahun Ajaran 2026/2027"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Field Placeholder Dinamis dari Template */}
+                      {detectedPlaceholders.filter((p) => !['NOMOR_SK', 'TANGGAL_SK', 'TENTANG'].includes(p)).length > 0 && (
+                        <div className="pt-4 border-t border-slate-100 space-y-4">
+                          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Variabel Kustom Terdeteksi dari Template</span>
+                          </h4>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {detectedPlaceholders
+                              .filter((p) => !['NOMOR_SK', 'TANGGAL_SK', 'TENTANG'].includes(p))
+                              .map((p) => (
+                                <div key={p}>
+                                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                                    <span>{p.replace(/_/g, ' ')}</span>
+                                    <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-semibold">
+                                      {'{{' + p + '}}'}
+                                    </span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={placeholderInputs[p] || ''}
+                                    onChange={(e) =>
+                                      setPlaceholderInputs((prev) => ({
+                                        ...prev,
+                                        [p]: e.target.value,
+                                      }))
+                                    }
+                                    placeholder={`Masukkan ${p.toLowerCase().replace(/_/g, ' ')}...`}
+                                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                  />
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {generateError && (
+                        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                          {generateError}
+                        </div>
+                      )}
+
+                      {/* Tombol Aksi Generate */}
+                      <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          onClick={handleResetCreateSK}
+                          className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                        >
+                          Batal &amp; Bersihkan Form
+                        </button>
+
+                        <button
+                          type="submit"
+                          disabled={isGeneratingSK}
+                          className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all disabled:opacity-50 cursor-pointer"
+                        >
+                          {isGeneratingSK ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Memproses Dokumen SK...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-4 h-4" />
+                              <span>Generate &amp; Simpan Dokumen SK (.docx)</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* KARTU HASIL GENERATE SUKSES */}
+                  {generatedSKResult && (
+                    <div className="bg-emerald-50/80 border border-emerald-200 rounded-3xl p-6 sm:p-8 space-y-4 animate-fadeIn">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h4 className="text-base font-bold text-emerald-950">
+                            Surat Keputusan Berhasil Dibuat!
+                          </h4>
+                          <p className="text-xs text-emerald-800">
+                            Dokumen SK telah digenerate mengikuti template format asli dan otomatis tersimpan dalam arsip resmi sekolah.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-white rounded-2xl border border-emerald-100 text-xs space-y-1.5">
+                        <p><strong>Nomor:</strong> {generatedSKResult.sk?.nomor}</p>
+                        <p><strong>Tanggal:</strong> {generatedSKResult.sk?.tanggal}</p>
+                        <p><strong>Tentang:</strong> {generatedSKResult.sk?.tentang}</p>
+                        <p><strong>Dokumen Hasil:</strong> {generatedSKResult.documentFileName}</p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2.5 pt-2">
+                        {generatedSKResult.documentUrl && (
+                          <a
+                            href={generatedSKResult.documentUrl}
+                            download
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-colors"
+                          >
+                            <Download className="w-4 h-4" />
+                            <span>Unduh Dokumen SK (.docx)</span>
+                          </a>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSkSubTab('arsip');
+                            setGeneratedSKResult(null);
+                          }}
+                          className="px-4 py-2.5 rounded-xl bg-white border border-emerald-200 text-emerald-800 font-bold text-xs hover:bg-emerald-50 transition-colors"
+                        >
+                          Lihat di Arsip SK
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleResetCreateSK}
+                          className="px-4 py-2.5 rounded-xl text-slate-600 font-semibold text-xs hover:bg-slate-100 transition-colors"
+                        >
+                          + Buat SK Lainnya
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </form>
+              </div>
+            )}
+
+            {/* SUB-TAB B: ARSIP SURAT KEPUTUSAN */}
+            {skSubTab === 'arsip' && (
+              <div className="space-y-6">
+                {/* Search & Filter Bar */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+                  <div className="relative w-full sm:w-80">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={skSearch}
+                      onChange={(e) => setSkSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') fetchSKData();
+                      }}
+                      placeholder="Cari nomor SK atau perihal..."
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <select
+                      value={skYearFilter}
+                      onChange={(e) => setSkYearFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    >
+                      <option value="all">Semua Tahun</option>
+                      <option value="2026">Tahun 2026</option>
+                      <option value="2025">Tahun 2025</option>
+                      <option value="2024">Tahun 2024</option>
+                    </select>
+
+                    <button
+                      onClick={() => setSkSubTab('buat')}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors shrink-0 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Buat SK</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Loading State */}
+                {isLoadingSK && <ModuleLoadingState label="Arsip Surat Keputusan" />}
+
+                {/* Error State */}
+                {skError && (
+                  <ModuleErrorState
+                    title="Arsip Surat Keputusan"
+                    message={skError}
+                    onRetry={fetchSKData}
+                  />
+                )}
+
+                {/* Tabel Arsip SK */}
+                {!isLoadingSK && !skError && (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                            <th className="py-3.5 px-6">No</th>
+                            <th className="py-3.5 px-6">Nomor SK</th>
+                            <th className="py-3.5 px-6">Tanggal</th>
+                            <th className="py-3.5 px-6">Tentang / Perihal</th>
+                            <th className="py-3.5 px-6">Pembuat</th>
+                            <th className="py-3.5 px-6">Tanggal Dibuat</th>
+                            <th className="py-3.5 px-6 text-right">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
+                          {skList.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="py-12 text-center text-slate-400">
+                                <div className="space-y-2">
+                                  <FileCheck className="w-8 h-8 mx-auto text-slate-300" />
+                                  <p className="text-xs font-semibold text-slate-600">
+                                    Belum ada arsip Surat Keputusan yang terdaftar.
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                                    Klik tombol &quot;Buat SK Baru&quot; untuk mengunggah format template dan menghasilkan SK kurikulum resmi.
+                                  </p>
+                                  <button
+                                    onClick={() => setSkSubTab('buat')}
+                                    className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition-colors"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Mulai Buat SK</span>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : (
+                            skList.map((sk: any, idx: number) => (
+                              <tr key={sk.id} className="hover:bg-slate-50/70 transition-colors">
+                                <td className="py-4 px-6 text-slate-400 font-semibold">{idx + 1}</td>
+                                <td className="py-4 px-6">
+                                  <span className="font-bold text-slate-900 font-mono text-xs">
+                                    {sk.nomor}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-6 text-slate-600 text-xs">{sk.tanggal}</td>
+                                <td className="py-4 px-6">
+                                  <div className="font-semibold text-slate-800 line-clamp-2 max-w-md">
+                                    {sk.tentang}
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6">
+                                  <div className="text-xs font-bold text-slate-700">
+                                    {sk.creator?.name || 'Wakasek Kurikulum'}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400">
+                                    {sk.creator?.role || 'wakasek_kurikulum'}
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6 text-xs text-slate-500">
+                                  {new Date(sk.created_at).toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
+                                </td>
+                                <td className="py-4 px-6 text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      onClick={() => setSelectedSKDetail(sk)}
+                                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                                      title="Detail SK"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                      <span>Detail</span>
+                                    </button>
+
+                                    {sk.document_file_url && (
+                                      <a
+                                        href={sk.document_file_url}
+                                        download
+                                        className="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition-colors inline-flex items-center gap-1"
+                                        title="Unduh Dokumen SK (.docx)"
+                                      >
+                                        <Download className="w-3.5 h-3.5" />
+                                        <span>SK</span>
+                                      </a>
+                                    )}
+
+                                    {sk.template_file_url && (
+                                      <a
+                                        href={sk.template_file_url}
+                                        download
+                                        className="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 transition-colors inline-flex items-center gap-1"
+                                        title="Unduh Template DOCX Asli"
+                                      >
+                                        <Download className="w-3.5 h-3.5" />
+                                        <span>Template</span>
+                                      </a>
+                                    )}
+
+                                    <button
+                                      onClick={() => setSkToDelete(sk)}
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                      title="Hapus dari Arsip"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -3028,6 +3472,195 @@ export default function CurriculumView({ user }: Props) {
       </main>
 
       {/* ------------------------------------------------------------- */}
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL DETAIL SURAT KEPUTUSAN (SK) */}
+      {/* ------------------------------------------------------------- */}
+      {selectedSKDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
+                  <FileCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Detail Surat Keputusan
+                  </h3>
+                  <p className="text-xs font-mono text-emerald-800">
+                    {selectedSKDetail.nomor}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedSKDetail(null)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4 space-y-4 text-xs">
+              <div className="p-4 bg-slate-50 rounded-2xl space-y-2">
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Tentang / Perihal:</span>
+                  <p className="font-bold text-slate-800 text-sm mt-0.5">{selectedSKDetail.tentang}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60">
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold block">Tanggal SK:</span>
+                    <span className="font-semibold text-slate-700">{selectedSKDetail.tanggal}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold block">Pembuat Dokumen:</span>
+                    <span className="font-semibold text-slate-700">{selectedSKDetail.creator?.name || 'Wakasek Kurikulum'}</span>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-slate-200/60">
+                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Waktu Pengarsipan:</span>
+                  <span className="text-slate-600">
+                    {new Date(selectedSKDetail.created_at).toLocaleString('id-ID', {
+                      dateStyle: 'full',
+                      timeStyle: 'medium',
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Tautan Berkas */}
+              <div className="space-y-2">
+                <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px] block">
+                  Berkas Terkait:
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {selectedSKDetail.document_file_url && (
+                    <a
+                      href={selectedSKDetail.document_file_url}
+                      download
+                      className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-emerald-800 hover:bg-emerald-100 transition-colors"
+                    >
+                      <div>
+                        <span className="font-bold block text-xs">Dokumen SK (.docx)</span>
+                        <span className="text-[10px] text-emerald-600 truncate block max-w-[160px]">
+                          {selectedSKDetail.document_file_name || 'sk-hasil.docx'}
+                        </span>
+                      </div>
+                      <Download className="w-4 h-4 shrink-0 text-emerald-700" />
+                    </a>
+                  )}
+
+                  {selectedSKDetail.template_file_url && (
+                    <a
+                      href={selectedSKDetail.template_file_url}
+                      download
+                      className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-slate-700 hover:bg-slate-100 transition-colors"
+                    >
+                      <div>
+                        <span className="font-bold block text-xs">Template Asli (.docx)</span>
+                        <span className="text-[10px] text-slate-400 truncate block max-w-[160px]">
+                          {selectedSKDetail.template_file_name || 'template.docx'}
+                        </span>
+                      </div>
+                      <Download className="w-4 h-4 shrink-0 text-slate-600" />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Rincian Placeholder Digunakan */}
+              {selectedSKDetail.placeholders_used && (
+                <div className="space-y-2 pt-2">
+                  <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px] block">
+                    Data Variabel Pengganti (Placeholder):
+                  </span>
+                  <div className="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-slate-50 text-[10px] uppercase font-bold text-slate-400 sticky top-0">
+                        <tr>
+                          <th className="py-2 px-3 border-b border-slate-200">Placeholder</th>
+                          <th className="py-2 px-3 border-b border-slate-200">Nilai yang Diterapkan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {(() => {
+                          try {
+                            const parsed = JSON.parse(selectedSKDetail.placeholders_used);
+                            return Object.entries(parsed).map(([key, val]) => (
+                              <tr key={key} className="hover:bg-slate-50/50">
+                                <td className="py-1.5 px-3 font-mono font-bold text-emerald-800 text-[11px]">
+                                  {'{{${key}}}'}
+                                </td>
+                                <td className="py-1.5 px-3 text-slate-700">{String(val) || '—'}</td>
+                              </tr>
+                            ));
+                          } catch {
+                            return (
+                              <tr>
+                                <td colSpan={2} className="py-2 px-3 text-slate-400">
+                                  Rincian tidak tersedia.
+                                </td>
+                              </tr>
+                            );
+                          }
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex justify-end shrink-0">
+              <button
+                onClick={() => setSelectedSKDetail(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL KONFIRMASI HAPUS ARSIP SK */}
+      {/* ------------------------------------------------------------- */}
+      {skToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                Hapus Surat Keputusan?
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Apakah Anda yakin ingin menghapus SK Nomor <strong>&quot;{skToDelete.nomor}&quot;</strong> dari arsip resmi? Dokumen hasil dan catatan arsip akan dihapus.
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2.5">
+              <button
+                onClick={() => setSkToDelete(null)}
+                disabled={isDeletingSK}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDeleteSK}
+                disabled={isDeletingSK}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingSK ? 'Menghapus...' : 'Ya, Hapus SK'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL DETAIL KELAS: MENAMPILKAN SISWA AKTIF DARI MASTER DATA SISWA */}
       {/* ------------------------------------------------------------- */}
       {selectedClassDetail && (
