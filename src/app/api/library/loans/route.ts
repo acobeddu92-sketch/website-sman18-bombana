@@ -390,7 +390,7 @@ export async function POST(request: NextRequest) {
         loan: newLoan,
         remainingStock: updatedBook.available_stock,
       };
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return NextResponse.json(
       {

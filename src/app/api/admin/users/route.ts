@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifySessionToken } from '@/lib/auth';
 import { hashPassword } from '@/lib/password';
-import { AUTH_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_COOKIE_NAME, ROLES } from '@/lib/constants';
 
 // Middleware helper untuk verifikasi role admin
 async function getAdminSession(request: NextRequest) {
@@ -60,20 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validRoles = [
-      'administrator',
-      'kepala_sekolah',
-      'wakasek_kurikulum',
-      'wakasek_kesiswaan',
-      'kepala_perpustakaan',
-      'guru_mapel',
-      'wali_kelas',
-      'guru_bk',
-      'pembina_osis',
-      'pembina_pramuka',
-      'siswa',
-      'guru',
-    ];
+    const validRoles = Object.keys(ROLES);
     if (!validRoles.includes(role)) {
       return NextResponse.json({ error: 'Role tidak valid.' }, { status: 400 });
     }

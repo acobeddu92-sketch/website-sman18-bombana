@@ -45,3 +45,37 @@ export async function verifyLibraryAccess(
     errorResponse: null,
   };
 }
+
+/**
+ * Roles with full management authority over E-Books:
+ * - 'administrator'
+ * - 'kepala_perpustakaan'
+ */
+export const EBOOK_MANAGEMENT_ROLES: UserRole[] = [
+  'administrator',
+  'kepala_perpustakaan',
+];
+
+/**
+ * Roles permitted to read/access published E-Books:
+ * - 'administrator'
+ * - 'kepala_perpustakaan'
+ * - 'siswa'
+ */
+export const EBOOK_READ_ROLES: UserRole[] = [
+  'administrator',
+  'kepala_perpustakaan',
+  'siswa',
+];
+
+export async function verifyEbookManagementAccess(
+  request: NextRequest
+): Promise<LibraryAuthResult> {
+  return verifyLibraryAccess(request, EBOOK_MANAGEMENT_ROLES);
+}
+
+export async function verifyEbookReadAccess(
+  request: NextRequest
+): Promise<LibraryAuthResult> {
+  return verifyLibraryAccess(request, EBOOK_READ_ROLES);
+}

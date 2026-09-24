@@ -20,6 +20,8 @@ const EXTENSION_MAP: Record<string, string> = {
   'image/png': '.png',
   'image/webp': '.webp',
   'image/svg+xml': '.svg',
+  'application/pdf': '.pdf',
+  'application/epub+zip': '.epub',
 };
 
 /**
@@ -53,7 +55,7 @@ export async function saveUploadedFile(
     if (!allowedTypes.includes(mimeType)) {
       return {
         success: false,
-        error: `Format file tidak diizinkan (${file.type}). Gunakan format JPG, PNG, WEBP, atau SVG.`,
+        error: `Format file tidak diizinkan (${file.type || 'tidak terdeteksi'}).`,
       };
     }
 
@@ -157,10 +159,15 @@ export async function deleteUploadedFile(fileUrl?: string | null): Promise<boole
       const absolutePath = path.join(process.cwd(), 'public', 'uploads', safePath);
 
       if (fs.existsSync(absolutePath)) {
-        fs.unlinkSync(absolutePath);
-        return true;
+        try {
+          fs.unlinkSync(absolutePath);
+          return true;
+        } catch (unlinkErr) {
+          console.error('Storage Error saat menghapus file lokal:', unlinkErr);
+          return false;
+        }
       }
-      return false;
+      return true; // Berkas sudah tidak ada pada media penyimpanan lokal
     }
 
     return false;

@@ -116,7 +116,7 @@ export async function POST(
       });
 
       return updatedLoan;
-    });
+    }, { maxWait: 10000, timeout: 20000 });
 
     return NextResponse.json({
       success: true,
