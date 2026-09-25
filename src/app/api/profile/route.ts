@@ -58,7 +58,9 @@ export async function GET() {
               id: true,
               name: true,
               grade: true,
+              code: true,
               academic_year: true,
+              academic_year_rel: { select: { id: true, name: true, is_active: true } },
             },
           },
         },
@@ -72,7 +74,10 @@ export async function GET() {
           name: student.name,
           gender: student.gender,
           class_name: student.class?.name || 'Belum ada kelas',
-          academic_year: student.class?.academic_year || '2026/2027',
+          academic_year:
+            student.class?.academic_year_rel?.name ||
+            student.class?.academic_year ||
+            '-',
           parent_name: student.parent_name,
           parent_phone: student.parent_phone,
           address: student.address,

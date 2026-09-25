@@ -153,18 +153,55 @@ model Announcement {
 }
 
 // ==========================================
-// 1. MODEL KELAS SEKOLAH
+// 0. MODEL MASTER TAHUN AJARAN (CANONICAL SOURCE OF TRUTH)
+// CATATAN ARSITEKTUR:
+// - Single active AcademicYear (is_active = true) dibatasi MAKSIMAL 1 baris
+//   di tingkat database melalui PostgreSQL partial unique index di manual SQL:
+//   "academic_years_single_active_idx".
+// ==========================================
+model AcademicYear {
+  id         String    @id @default(cuid())
+  name       String    @unique
+  start_date DateTime?
+  end_date   DateTime?
+  is_active  Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  classes Class[]
+
+  @@map("academic_years")
+}
+
+// ==========================================
+// 1. MODEL KELAS SEKOLAH (ROMBONGAN BELAJAR)
+// CATATAN ARSITEKTUR & INTEGRITAS:
+// - academic_year_id: CANONICAL SOURCE OF TRUTH (foreign key ke AcademicYear)
+// - academic_year: COMPATIBILITY MIRROR (string disinkronkan otomatis oleh API)
+// - Relasi academic_year_rel menggunakan onDelete: Restrict untuk mencegah
+//   penghapusan tahun ajaran yang masih memiliki kelas (Single Source of Truth).
+// - Constraint komposit di tingkat PostgreSQL dikelola via manual SQL migration:
+//     * "classes_name_academic_year_id_unique" (name + academic_year_id)
+//     * "classes_code_academic_year_id_unique" (code + academic_year_id)
+//     * "classes_homeroom_academic_year_id_unique" (homeroom_teacher_id + academic_year_id)
+//   Partial index tersebut sengaja dikelola di SQL manual karena Prisma DSL
+//   belum mendukung klausa WHERE pada @@unique.
+// - @@unique([name, academic_year]) dipertahankan untuk backward compatibility.
 // ==========================================
 model Class {
   id                  String   @id @default(cuid())
+  code                String?
   name                String // Contoh: "X-1", "X-2", "XI-1", "XII-IPA" (tanpa @unique tunggal)
   grade               String // "X", "XI", "XII"
-  academic_year       String   @default("2026/2027")
+  academic_year       String   @default("2026/2027") // Compatibility mirror
+  academic_year_id    String?  // Canonical source of truth
+  is_active           Boolean  @default(true)
   homeroom_teacher_id String?
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
   // Relasi
+  academic_year_rel   AcademicYear?       @relation(fields: [academic_year_id], references: [id], onDelete: Restrict)
   homeroom_teacher    User?               @relation("HomeroomTeacher", fields: [homeroom_teacher_id], references: [id], onDelete: SetNull)
   students            Student[]
   schedules           TeachingSchedule[]
@@ -173,6 +210,8 @@ model Class {
   assignments         Assignment[]
 
   @@unique([name, academic_year])
+  @@index([academic_year_id])
+  @@index([homeroom_teacher_id])
   @@map("classes")
 }
 

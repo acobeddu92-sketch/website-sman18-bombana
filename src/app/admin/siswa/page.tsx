@@ -131,7 +131,8 @@ export default function AdminStudentsPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setClasses(data.classes || []);
-        setAcademicYears(data.academicYears || []);
+        const yearList = data.allYearNames || (Array.isArray(data.academicYears) ? data.academicYears.map((y: any) => typeof y === 'string' ? y : y.name) : []);
+        setAcademicYears(yearList);
         if (data.classes.length > 0 && !singleForm.class_id) {
           setSingleForm((prev) => ({ ...prev, class_id: data.classes[0].id }));
           setBulkClassId(data.classes[0].id);

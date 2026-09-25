@@ -18,6 +18,7 @@ import {
   User,
   ShieldCheck,
   BookOpen,
+  Layers,
 } from 'lucide-react';
 import LogoutButton from '../dashboard/LogoutButton';
 
@@ -41,6 +42,7 @@ export default function Sidebar({ isOpen, onClose, adminUser, logo }: SidebarPro
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Pengaturan Role', href: '/admin/roles', icon: ShieldCheck },
+    { name: 'Master Kelas', href: '/admin/master-kelas', icon: Layers },
     { name: 'Data Siswa', href: '/admin/siswa', icon: UserCheck },
     { name: 'Buku Elektronik', href: '/admin/buku-elektronik', icon: BookOpen },
     { name: 'Beranda', href: '/admin/beranda', icon: Home },

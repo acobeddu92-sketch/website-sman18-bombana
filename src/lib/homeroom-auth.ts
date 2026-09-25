@@ -39,6 +39,7 @@ export async function verifyHomeroomAccess(
     const allClasses = await prisma.class.findMany({
       orderBy: [{ grade: 'asc' }, { name: 'asc' }],
       include: {
+        academic_year_rel: { select: { id: true, name: true, is_active: true } },
         homeroom_teacher: { select: { id: true, name: true, nip: true, username: true } },
         _count: { select: { students: { where: { is_active: true } } } },
       },
@@ -78,6 +79,7 @@ export async function verifyHomeroomAccess(
     where: { homeroom_teacher_id: session.id },
     orderBy: [{ grade: 'asc' }, { name: 'asc' }],
     include: {
+      academic_year_rel: { select: { id: true, name: true, is_active: true } },
       homeroom_teacher: { select: { id: true, name: true, nip: true, username: true } },
       _count: { select: { students: { where: { is_active: true } } } },
     },

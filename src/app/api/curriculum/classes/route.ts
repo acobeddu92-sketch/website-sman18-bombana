@@ -65,6 +65,9 @@ export async function GET(request: NextRequest) {
     // Ambil seluruh daftar kelas beserta ringkasan jumlah siswa aktif
     const classes = await prisma.class.findMany({
       include: {
+        academic_year_rel: {
+          select: { id: true, name: true, is_active: true },
+        },
         homeroom_teacher: {
           select: { id: true, name: true, email: true, username: true },
         },

@@ -31,6 +31,19 @@ interface Props {
     role: UserRole;
     email: string;
   };
+  student?: {
+    id: string;
+    name: string;
+    nis?: string | null;
+    nisn?: string | null;
+    class?: {
+      id: string;
+      name: string;
+      grade: string;
+      code?: string | null;
+      academic_year: string;
+    } | null;
+  } | null;
 }
 
 interface StudentEBook {
@@ -51,7 +64,7 @@ interface StudentEBook {
   };
 }
 
-export default function StudentView({ user }: Props) {
+export default function StudentView({ user, student }: Props) {
   const [activeTab, setActiveTab] = useState<'beranda' | 'ebooks'>('beranda');
 
   // E-Book Data States
@@ -118,16 +131,30 @@ export default function StudentView({ user }: Props) {
               <GraduationCap className="w-8 h-8 text-emerald-100" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider">
                   Peserta Didik
                 </span>
+                {student?.class ? (
+                  <>
+                    <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold">
+                      Kelas: {student.class.name} ({student.class.grade})
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-medium">
+                      TA: {student.class.academic_year}
+                    </span>
+                  </>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
+                    Belum Terdaftar di Rombel
+                  </span>
+                )}
               </div>
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
                 {user.name}
               </h1>
               <p className="text-xs sm:text-sm text-slate-500">
-                NIS / Username: @{user.username} • {user.email}
+                NIS: {student?.nis || user.username} {student?.nisn ? `• NISN: ${student.nisn}` : ''} • {user.email}
               </p>
             </div>
           </div>

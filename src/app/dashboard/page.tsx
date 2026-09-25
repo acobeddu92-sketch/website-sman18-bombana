@@ -246,5 +246,49 @@ export default async function DashboardPage() {
   }
 
   // Default: siswa
-  return <StudentView user={currentUser} />;
+  let studentProfileData: any = null;
+  try {
+    const student = await prisma.student.findFirst({
+      where: {
+        OR: [
+          { user_id: session.id },
+          { nis: session.username },
+          { nisn: session.username },
+        ],
+      },
+      include: {
+        class: {
+          include: {
+            academic_year_rel: true,
+          },
+        },
+      },
+    });
+
+    if (student) {
+      studentProfileData = {
+        id: student.id,
+        name: student.name,
+        nis: student.nis,
+        nisn: student.nisn,
+        gender: student.gender,
+        class: student.class
+          ? {
+              id: student.class.id,
+              name: student.class.name,
+              grade: student.class.grade,
+              code: student.class.code,
+              academic_year:
+                student.class.academic_year_rel?.name ||
+                student.class.academic_year ||
+                '-',
+            }
+          : null,
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching student class data for dashboard:', err);
+  }
+
+  return <StudentView user={currentUser} student={studentProfileData} />;
 }

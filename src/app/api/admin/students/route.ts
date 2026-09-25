@@ -47,9 +47,12 @@ export async function GET(request: NextRequest) {
         class: {
           select: {
             id: true,
+            code: true,
             name: true,
             grade: true,
             academic_year: true,
+            academic_year_id: true,
+            academic_year_rel: { select: { id: true, name: true, is_active: true } },
             homeroom_teacher: {
               select: {
                 id: true,

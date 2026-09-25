@@ -753,7 +753,7 @@ export default function HomeroomView({ user }: HomeroomViewProps) {
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold text-amber-900">
-                    Anda belum memiliki kelas sebagai wali kelas.
+                    Belum ditugaskan sebagai wali kelas.
                   </h3>
                   <p className="text-sm text-amber-800 leading-relaxed">
                     Saat ini akun Anda belum terhubung dengan rombongan belajar (rombel) aktif di sistem. Silakan berkoordinasi dengan Wakil Kepala Sekolah Bidang Kurikulum atau Administrator Sekolah untuk menetapkan kelas binaan Anda.
