@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifySessionToken } from '@/lib/auth';
-import { AUTH_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_COOKIE_NAME, ANNOUNCEMENT_MANAGER_ROLES } from '@/lib/constants';
 import { prisma } from '@/lib/prisma';
 import { deleteUploadedFile } from '@/lib/storage';
 
@@ -17,8 +17,11 @@ export async function PUT(
     if (!token) return NextResponse.json({ error: 'Akses ditolak.' }, { status: 401 });
 
     const session = await verifySessionToken(token);
-    if (!session || session.role !== 'administrator') {
-      return NextResponse.json({ error: 'Hanya untuk Administrator.' }, { status: 403 });
+    if (!session || !ANNOUNCEMENT_MANAGER_ROLES.includes(session.role as any)) {
+      return NextResponse.json(
+        { error: 'Akses ditolak: Hanya Administrator dan Pembina OSIS yang dapat mengedit informasi.' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
@@ -71,8 +74,11 @@ export async function DELETE(
     if (!token) return NextResponse.json({ error: 'Akses ditolak.' }, { status: 401 });
 
     const session = await verifySessionToken(token);
-    if (!session || session.role !== 'administrator') {
-      return NextResponse.json({ error: 'Hanya untuk Administrator.' }, { status: 403 });
+    if (!session || !ANNOUNCEMENT_MANAGER_ROLES.includes(session.role as any)) {
+      return NextResponse.json(
+        { error: 'Akses ditolak: Hanya Administrator dan Pembina OSIS yang dapat menghapus informasi.' },
+        { status: 403 }
+      );
     }
 
     const item = await prisma.announcement.findUnique({

@@ -16,32 +16,7 @@ export default async function InformasiPage() {
     console.error(err);
   }
 
-  if (announcements.length === 0) {
-    announcements = [
-      {
-        id: '1',
-        title: 'Jadwal Penilaian Akhir Semester & Pembagian Rapor',
-        content: 'Diberitahukan kepada seluruh peserta didik kelas X, XI, dan XII bahwa pelaksanaan asesmen semester akan dimulai minggu depan.',
-        category: 'pengumuman',
-        published_at: new Date(),
-      },
-      {
-        id: '2',
-        title: 'Aksi Bersih Lingkungan Serentak & Kompos Mandiri',
-        content: 'Kegiatan rutin Jumat Bersih dalam rangka menguatkan program Adiwiyata Green School SMAN 18 Bombana.',
-        category: 'agenda',
-        published_at: new Date(),
-      },
-      {
-        id: '3',
-        title: 'Siswa SMAN 18 Raih Medali Perunggu Olimpiade Sains',
-        content: 'Apresiasi tinggi kepada tim olimpiade biologi dan kebumian yang telah mengharumkan nama sekolah di kancah regional.',
-        category: 'berita',
-        published_at: new Date(),
-      }
-    ];
-  }
-
+  // Data murni dari database Neon production (tanpa hardcoded dummy fallback)
   return (
     <div className="py-12 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,7 +36,18 @@ export default async function InformasiPage() {
         </div>
 
         {/* List Card Informasi */}
-        <div className="max-w-4xl mx-auto space-y-6">
+        {announcements.length === 0 ? (
+          <div className="max-w-xl mx-auto py-16 text-center bg-white rounded-3xl border border-dashed border-slate-200 p-8 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+              <Bell className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">Belum Ada Pengumuman Resmi</h3>
+            <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+              Saat ini belum ada pengumuman atau berita resmi yang dipublikasikan. Silakan periksa kembali di lain waktu.
+            </p>
+          </div>
+        ) : (
+          <div className="max-w-4xl mx-auto space-y-6">
           {announcements.map((item) => {
             const dateStr = new Intl.DateTimeFormat('id-ID', {
               day: 'numeric',
@@ -133,6 +119,7 @@ export default async function InformasiPage() {
             );
           })}
         </div>
+        )}
 
       </div>
     </div>

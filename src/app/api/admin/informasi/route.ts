@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifySessionToken } from '@/lib/auth';
-import { AUTH_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_COOKIE_NAME, ANNOUNCEMENT_MANAGER_ROLES } from '@/lib/constants';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -11,9 +11,23 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status'); // 'all' | 'published' | 'draft'
 
+    // Cek sesi pengelola (administrator / pembina_osis)
+    const cookieStore = cookies();
+    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+    const session = token ? await verifySessionToken(token) : null;
+    const isManager = Boolean(
+      session && ANNOUNCEMENT_MANAGER_ROLES.includes(session.role as any)
+    );
+
     const whereClause: any = {};
-    if (status === 'published') whereClause.is_published = true;
-    if (status === 'draft') whereClause.is_published = false;
+    if (isManager) {
+      if (status === 'published') whereClause.is_published = true;
+      if (status === 'draft') whereClause.is_published = false;
+      // Jika status 'all' atau tidak dispesifikasikan, pengelola melihat semua
+    } else {
+      // Role non-pengelola dan publik HANYA dapat melihat yang dipublikasikan (published)
+      whereClause.is_published = true;
+    }
 
     const announcements = await prisma.announcement.findMany({
       where: whereClause,
@@ -36,8 +50,11 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: 'Akses ditolak.' }, { status: 401 });
 
     const session = await verifySessionToken(token);
-    if (!session || session.role !== 'administrator') {
-      return NextResponse.json({ error: 'Hanya untuk Administrator.' }, { status: 403 });
+    if (!session || !ANNOUNCEMENT_MANAGER_ROLES.includes(session.role as any)) {
+      return NextResponse.json(
+        { error: 'Akses ditolak: Hanya Administrator dan Pembina OSIS yang dapat membuat informasi.' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

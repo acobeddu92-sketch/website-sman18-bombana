@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import LogoutButton from './LogoutButton';
 import GalleryManagementModal from './GalleryManagementModal';
+import AnnouncementManagementModal from './AnnouncementManagementModal';
 import { UserRole } from '@/lib/constants';
 import {
   Flame,
@@ -17,6 +18,7 @@ import {
   Award,
   User as UserIcon,
   Image as ImageIcon,
+  Bell,
 } from 'lucide-react';
 
 interface Props {
@@ -32,6 +34,7 @@ interface Props {
 
 export default function PembinaView({ user, type }: Props) {
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
   const isOsis = type === 'osis';
 
   const roleTitle = isOsis ? 'Pembina OSIS' : 'Pembina Pramuka';
@@ -79,6 +82,16 @@ export default function PembinaView({ user, type }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            {isOsis && (
+              <button
+                type="button"
+                onClick={() => setIsAnnouncementModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-xs transition-colors"
+              >
+                <Bell className="w-4 h-4" />
+                <span>Kelola Pengumuman</span>
+              </button>
+            )}
             <button
               onClick={() => setIsGalleryModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors"
@@ -192,6 +205,14 @@ export default function PembinaView({ user, type }: Props) {
         onClose={() => setIsGalleryModalOpen(false)}
         userRole={user.role}
       />
+
+      {isOsis && (
+        <AnnouncementManagementModal
+          isOpen={isAnnouncementModalOpen}
+          onClose={() => setIsAnnouncementModalOpen(false)}
+          userRole={user.role}
+        />
+      )}
     </div>
   );
 }

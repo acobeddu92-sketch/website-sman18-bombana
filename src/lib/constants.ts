@@ -110,3 +110,14 @@ export const GALLERY_CREATOR_ROLES: UserRole[] = [
   'pembina_pramuka',
   'guru', // fallback kompatibilitas
 ];
+
+/**
+ * 2 Role Resmi Pengelola Informasi & Pengumuman Beranda Sekolah:
+ * 1. administrator
+ * 2. pembina_osis
+ * (Role lainnya & Siswa & Publik: READ ONLY, mutasi ditolak mutlak dengan HTTP 403)
+ */
+export const ANNOUNCEMENT_MANAGER_ROLES: UserRole[] = [
+  'administrator',
+  'pembina_osis',
+];

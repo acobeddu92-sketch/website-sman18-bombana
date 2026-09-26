@@ -21,6 +21,7 @@ import {
   Camera,
   Image as ImageIcon,
   Layers,
+  Bell,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -33,9 +34,10 @@ export default async function HomePage() {
   let activePrincipal = null;
   let latestPhotos: any[] = [];
   let recentAlbums: any[] = [];
+  let latestAnnouncements: any[] = [];
 
   try {
-    const [sp, pp, hb, ap, lp, ra] = await Promise.all([
+    const [sp, pp, hb, ap, lp, ra, la] = await Promise.all([
       prisma.schoolProfile.findFirst(),
       prisma.principalProfile.findFirst(),
       prisma.homeBackground.findFirst({
@@ -65,6 +67,11 @@ export default async function HomePage() {
           _count: { select: { photos: { where: { is_published: true } } } },
         },
       }),
+      prisma.announcement.findMany({
+        where: { is_published: true },
+        take: 3,
+        orderBy: { published_at: 'desc' },
+      }),
     ]);
     schoolProfile = sp;
     principalProfile = pp;
@@ -72,6 +79,7 @@ export default async function HomePage() {
     activePrincipal = ap;
     latestPhotos = lp || [];
     recentAlbums = ra || [];
+    latestAnnouncements = la || [];
   } catch (err) {
     console.error('Database query error in HomePage:', err);
   }
@@ -218,6 +226,32 @@ export default async function HomePage() {
             </a>
           </div>
         </div>
+
+        {/* Live Announcement Alert Bar (Database Grounded & Single-Screen Compact) */}
+        {latestAnnouncements.length > 0 && (
+          <div className="relative z-10 mt-2.5 pt-2 border-t border-white/15 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/25 text-amber-200 text-[10px] font-bold uppercase tracking-wider border border-amber-300/30 shrink-0">
+                <Bell className="w-3 h-3" />
+                <span>Pengumuman</span>
+              </span>
+              <a
+                href="/informasi"
+                className="text-white/90 hover:text-white font-medium truncate text-[11px] sm:text-xs hover:underline drop-shadow-xs"
+                title={latestAnnouncements[0].title}
+              >
+                {latestAnnouncements[0].title}
+              </a>
+            </div>
+            <a
+              href="/informasi"
+              className="text-[10px] sm:text-[11px] text-emerald-200 hover:text-white font-semibold shrink-0 flex items-center gap-1 transition-colors"
+            >
+              <span>Semua Pengumuman ({latestAnnouncements.length})</span>
+              <ArrowRight className="w-2.5 h-2.5" />
+            </a>
+          </div>
+        )}
 
         {/* Ambient glow decoration */}
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-56 h-56 rounded-full bg-emerald-400/20 blur-2xl pointer-events-none" />
