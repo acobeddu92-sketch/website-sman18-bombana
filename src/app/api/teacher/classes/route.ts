@@ -23,6 +23,14 @@ export async function GET(request: NextRequest) {
 
     const classIds = schedules.map((s) => s.class_id);
 
+    // Perbaikan Kebocoran Data (Information Leak):
+    // Jika role pengajar (guru_mapel, guru, wali_kelas) belum memiliki jadwal mengajar,
+    // jangan kembalikan semua kelas di sekolah (cegah kebocoran data siswa/rombel).
+    const isSupervisory = session!.role === 'administrator' || session!.role === 'kepala_sekolah';
+    if (!isSupervisory && classIds.length === 0) {
+      return NextResponse.json({ success: true, classes: [] });
+    }
+
     // Ambil kelas
     const whereClause: any = classIds.length > 0 ? { id: { in: classIds } } : {};
 

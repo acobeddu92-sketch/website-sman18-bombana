@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import GalleryManagementModal from './GalleryManagementModal';
 import {
   Users,
   Calendar,
@@ -13,6 +14,7 @@ import {
   BarChart3,
   Bell,
   UserCog,
+  Image as ImageIcon,
   LogOut,
   Search,
   Filter,
@@ -65,6 +67,7 @@ export default function HomeroomView({ user }: HomeroomViewProps) {
   // Navigation State (11 Menus)
   const [activeMenu, setActiveMenu] = useState<string>('dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
   // Month & Year Filter State (Default current month & year)
   const now = new Date();
@@ -493,6 +496,7 @@ export default function HomeroomView({ user }: HomeroomViewProps) {
     { id: 'follow_ups', label: 'Tindak Lanjut', icon: Clock },
     { id: 'guidance', label: 'Pembinaan Siswa', icon: UserCheck },
     { id: 'activities', label: 'Kegiatan Kelas', icon: Award },
+    { id: 'galeri', label: 'Galeri & Dokumentasi', icon: ImageIcon },
     { id: 'recap', label: 'Rekap Kelas', icon: FileText },
     { id: 'notifications', label: 'Notifikasi', icon: Bell },
     { id: 'account', label: 'Pengaturan Akun', icon: UserCog },
@@ -571,6 +575,9 @@ export default function HomeroomView({ user }: HomeroomViewProps) {
                 onClick={() => {
                   if (item.id === 'logout') {
                     handleLogout();
+                  } else if (item.id === 'galeri') {
+                    setIsGalleryModalOpen(true);
+                    setMobileSidebarOpen(false);
                   } else {
                     setActiveMenu(item.id);
                     setMobileSidebarOpen(false);
@@ -2818,6 +2825,12 @@ export default function HomeroomView({ user }: HomeroomViewProps) {
           </div>
         </div>
       )}
+
+      <GalleryManagementModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => setIsGalleryModalOpen(false)}
+        userRole={user.role}
+      />
     </div>
   );
 }

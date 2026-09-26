@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import LogoutButton from './LogoutButton';
+import GalleryManagementModal from './GalleryManagementModal';
 import { UserRole } from '@/lib/constants';
 import {
   Flame,
@@ -15,6 +16,7 @@ import {
   Layers,
   Award,
   User as UserIcon,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface Props {
@@ -29,6 +31,7 @@ interface Props {
 }
 
 export default function PembinaView({ user, type }: Props) {
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const isOsis = type === 'osis';
 
   const roleTitle = isOsis ? 'Pembina OSIS' : 'Pembina Pramuka';
@@ -76,6 +79,13 @@ export default function PembinaView({ user, type }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <button
+              onClick={() => setIsGalleryModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors"
+            >
+              <ImageIcon className="w-4 h-4" />
+              <span>Galeri &amp; Dokumentasi</span>
+            </button>
             <Link
               href="/dashboard/profile"
               className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
@@ -176,6 +186,12 @@ export default function PembinaView({ user, type }: Props) {
         </div>
 
       </div>
+
+      <GalleryManagementModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => setIsGalleryModalOpen(false)}
+        userRole={user.role}
+      />
     </div>
   );
 }

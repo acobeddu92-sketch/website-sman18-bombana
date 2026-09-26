@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import LogoutButton from './LogoutButton';
+import GalleryManagementModal from './GalleryManagementModal';
 import { UserRole } from '@/lib/constants';
 import {
   BookOpen,
   Calendar,
   Clock,
   Users,
+  Image as ImageIcon,
   CheckCircle2,
   AlertTriangle,
   AlertCircle,
@@ -72,6 +74,7 @@ type CurriculumTab =
 export default function CurriculumView({ user }: Props) {
   const [activeTab, setActiveTab] = useState<CurriculumTab>('dashboard');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
   // Global State & Notification Feedback
   const [isLoading, setIsLoading] = useState(true);
@@ -1047,6 +1050,18 @@ export default function CurriculumView({ user }: Props) {
           })}
         </nav>
 
+        {/* Gallery / Dokumentasi Quick Action */}
+        <div className="px-3 pb-2">
+          <button
+            type="button"
+            onClick={() => setIsGalleryModalOpen(true)}
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-emerald-800 hover:bg-slate-100/80 transition-colors cursor-pointer text-left"
+          >
+            <ImageIcon className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="truncate">Galeri &amp; Dokumentasi</span>
+          </button>
+        </div>
+
         {/* Footer: Menu 13 Logout & Link Website */}
         <div className="p-4 border-t border-slate-100 space-y-2">
           <a
@@ -1115,6 +1130,17 @@ export default function CurriculumView({ user }: Props) {
                   </button>
                 );
               })}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileNavOpen(false);
+                  setIsGalleryModalOpen(true);
+                }}
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                <ImageIcon className="w-4 h-4 text-emerald-600" />
+                <span>Galeri &amp; Dokumentasi</span>
+              </button>
             </div>
             <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
               <LogoutButton className="w-full justify-center" />
@@ -4178,6 +4204,11 @@ export default function CurriculumView({ user }: Props) {
         </div>
       )}
 
+      <GalleryManagementModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => setIsGalleryModalOpen(false)}
+        userRole={user.role}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import GalleryManagementModal from './GalleryManagementModal';
 import {
   Users,
   Calendar,
@@ -13,6 +14,7 @@ import {
   BarChart3,
   Bell,
   UserCog,
+  Image as ImageIcon,
   LogOut,
   Search,
   Filter,
@@ -58,6 +60,7 @@ export default function StudentAffairsView({ user }: StudentAffairsViewProps) {
   // Navigation State
   const [activeMenu, setActiveMenu] = useState<string>('dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
   // Month & Year Filter State (Default current month & year)
   const now = new Date();
@@ -574,6 +577,7 @@ export default function StudentAffairsView({ user }: StudentAffairsViewProps) {
     { id: 'picket', label: 'Laporan Piket', icon: ClipboardList },
     { id: 'guidance', label: 'Pembinaan Siswa', icon: UserCheck },
     { id: 'activities', label: 'Kegiatan Kesiswaan', icon: Award },
+    { id: 'galeri', label: 'Galeri & Dokumentasi', icon: ImageIcon },
     { id: 'statistics', label: 'Statistik Kesiswaan', icon: BarChart3 },
     { id: 'reports', label: 'Rekap & Laporan', icon: FileText },
     { id: 'notifications', label: 'Notifikasi', icon: Bell },
@@ -635,6 +639,9 @@ export default function StudentAffairsView({ user }: StudentAffairsViewProps) {
                 onClick={() => {
                   if (item.id === 'logout') {
                     handleLogout();
+                  } else if (item.id === 'galeri') {
+                    setIsGalleryModalOpen(true);
+                    setMobileSidebarOpen(false);
                   } else {
                     setActiveMenu(item.id);
                     setMobileSidebarOpen(false);
@@ -3210,6 +3217,12 @@ export default function StudentAffairsView({ user }: StudentAffairsViewProps) {
           </div>
         </div>
       )}
+
+      <GalleryManagementModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => setIsGalleryModalOpen(false)}
+        userRole={user.role}
+      />
     </div>
   );
 }

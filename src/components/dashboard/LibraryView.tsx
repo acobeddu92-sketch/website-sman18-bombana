@@ -4,12 +4,14 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import LogoutButton from './LogoutButton';
 import EBookManagementView from './EBookManagementView';
+import GalleryManagementModal from './GalleryManagementModal';
 import { UserRole } from '@/lib/constants';
 import {
   LayoutDashboard,
   BookOpen,
   FolderTree,
   Users,
+  Image as ImageIcon,
   ArrowUpRight,
   ArrowDownLeft,
   History,
@@ -73,6 +75,7 @@ type LibraryTab =
 export default function LibraryView({ user }: Props) {
   const [activeTab, setActiveTab] = useState<LibraryTab>('dashboard');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
   // Global Alert
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -823,7 +826,15 @@ export default function LibraryView({ user }: Props) {
               );
             })}
 
-            <div className="pt-3 border-t border-slate-100">
+            <div className="pt-3 border-t border-slate-100 space-y-1">
+              <button
+                type="button"
+                onClick={() => setIsGalleryModalOpen(true)}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition"
+              >
+                <ImageIcon className="w-4 h-4 text-emerald-600" />
+                <span>Galeri &amp; Dokumentasi</span>
+              </button>
               <Link
                 href="/dashboard/profile"
                 className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
@@ -867,6 +878,19 @@ export default function LibraryView({ user }: Props) {
                   </button>
                 );
               })}
+              <div className="pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileNavOpen(false);
+                    setIsGalleryModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  <ImageIcon className="w-4 h-4 text-emerald-600" />
+                  <span>Galeri &amp; Dokumentasi</span>
+                </button>
+              </div>
             </div>
             <div className="flex-1" onClick={() => setIsMobileNavOpen(false)} />
           </div>
@@ -2165,6 +2189,12 @@ export default function LibraryView({ user }: Props) {
           </div>
         </div>
       )}
+
+      <GalleryManagementModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => setIsGalleryModalOpen(false)}
+        userRole={user.role}
+      />
     </div>
   );
 }

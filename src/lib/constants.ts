@@ -82,3 +82,31 @@ export const DAILY_CATEGORIES = {
 };
 
 export const AUTH_COOKIE_NAME = 'sman18_session';
+
+/**
+ * 10 Role Non-Siswa yang memiliki hak membuat album dan mengunggah foto ke Galeri Sekolah:
+ * 1. administrator
+ * 2. kepala_sekolah
+ * 3. wakasek_kurikulum
+ * 4. wakasek_kesiswaan
+ * 5. kepala_perpustakaan
+ * 6. guru_mapel (+ legacy guru)
+ * 7. wali_kelas
+ * 8. guru_bk
+ * 9. pembina_osis
+ * 10. pembina_pramuka
+ * (Siswa: READ ONLY, mutasi ditolak mutlak dengan HTTP 403)
+ */
+export const GALLERY_CREATOR_ROLES: UserRole[] = [
+  'administrator',
+  'kepala_sekolah',
+  'wakasek_kurikulum',
+  'wakasek_kesiswaan',
+  'kepala_perpustakaan',
+  'guru_mapel',
+  'wali_kelas',
+  'guru_bk',
+  'pembina_osis',
+  'pembina_pramuka',
+  'guru', // fallback kompatibilitas
+];

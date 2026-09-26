@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import LogoutButton from './LogoutButton';
+import GalleryManagementModal from './GalleryManagementModal';
 import { UserRole } from '@/lib/constants';
 import {
   LayoutDashboard,
@@ -13,6 +14,7 @@ import {
   ShieldAlert,
   Bell,
   Settings,
+  Image as ImageIcon,
   Plus,
   Search,
   Filter,
@@ -84,6 +86,7 @@ const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 export default function TeacherView({ user }: Props) {
   const [activeTab, setActiveTab] = useState<TeacherTab>('dashboard');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
   // Global & Dashboard Data
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
@@ -1049,6 +1052,15 @@ export default function TeacherView({ user }: Props) {
                 9. Pengaturan Akun
               </button>
 
+              <button
+                type="button"
+                onClick={() => setIsGalleryModalOpen(true)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all text-slate-600 hover:bg-slate-100 hover:text-emerald-800"
+              >
+                <ImageIcon className="w-4 h-4 text-emerald-600" />
+                <span>Galeri &amp; Dokumentasi</span>
+              </button>
+
               <Link
                 href="/dashboard/profile"
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-emerald-800 transition-all"
@@ -1143,6 +1155,17 @@ export default function TeacherView({ user }: Props) {
                       </button>
                     );
                   })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileNavOpen(false);
+                      setIsGalleryModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                  >
+                    <ImageIcon className="w-4 h-4 text-emerald-600" />
+                    <span>Galeri &amp; Dokumentasi</span>
+                  </button>
                 </nav>
               </div>
 
@@ -3101,6 +3124,12 @@ export default function TeacherView({ user }: Props) {
           </div>
         </div>
       )}
+
+      <GalleryManagementModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => setIsGalleryModalOpen(false)}
+        userRole={user.role}
+      />
     </div>
   );
 }

@@ -11,14 +11,19 @@ export default async function GaleriPage() {
   try {
     [albums, photos] = await Promise.all([
       prisma.galleryAlbum.findMany({
+        where: { is_published: true },
         include: {
           _count: {
-            select: { photos: true },
+            select: { photos: { where: { is_published: true } } },
           },
         },
         orderBy: { created_at: 'desc' },
       }),
       prisma.galleryPhoto.findMany({
+        where: {
+          is_published: true,
+          album: { is_published: true },
+        },
         include: {
           album: {
             select: { title: true },
@@ -28,49 +33,7 @@ export default async function GaleriPage() {
       }),
     ]);
   } catch (err) {
-    console.error(err);
-  }
-
-  // Fallback jika belum ada foto
-  if (photos.length === 0) {
-    photos = [
-      {
-        id: '1',
-        title: 'Upacara Bendera Hari Pendidikan',
-        description: 'Semangat kebangsaan dan kedisiplinan seluruh siswa dan guru.',
-        image: '/images/gallery-1.jpg',
-        album_id: albums[0]?.id || null,
-        album: albums[0] ? { title: albums[0].title } : null,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        title: 'Penghijauan Sekolah Hijau (Green School)',
-        description: 'Aksi penanaman bibit pohon buah dan tanaman peneduh.',
-        image: '/images/gallery-2.jpg',
-        album_id: albums[0]?.id || null,
-        album: albums[0] ? { title: albums[0].title } : null,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: '3',
-        title: 'Laboratorium Komputer & Sains',
-        description: 'Fasilitas pembelajaran modern untuk literasi digital.',
-        image: '/images/gallery-3.jpg',
-        album_id: albums[1]?.id || null,
-        album: albums[1] ? { title: albums[1].title } : null,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: '4',
-        title: 'Juara Lomba Debat & Olimpiade Sains',
-        description: 'Pencapaian gemilang siswa-siswi SMAN 18 Bombana.',
-        image: '/images/gallery-4.jpg',
-        album_id: albums[2]?.id || null,
-        album: albums[2] ? { title: albums[2].title } : null,
-        created_at: new Date().toISOString(),
-      },
-    ];
+    console.error('Error fetching gallery data for public page:', err);
   }
 
   return (

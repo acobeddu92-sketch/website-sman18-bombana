@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifySessionToken } from '@/lib/auth';
-import { AUTH_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_COOKIE_NAME, GALLERY_CREATOR_ROLES } from '@/lib/constants';
 import { saveUploadedFile } from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Verifikasi Autentikasi & RBAC (Hanya Administrator)
+    // 1. Verifikasi Autentikasi & RBAC (Role Staf / Non-Siswa)
     const cookieStore = cookies();
     const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
     }
 
     const session = await verifySessionToken(token);
-    if (!session || session.role !== 'administrator') {
+    if (!session || !GALLERY_CREATOR_ROLES.includes(session.role as any)) {
       return NextResponse.json(
-        { error: 'Akses ditolak. Fitur ini hanya untuk Administrator.' },
+        { error: 'Akses ditolak. Anda tidak memiliki izin untuk mengunggah file.' },
         { status: 403 }
       );
     }

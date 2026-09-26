@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifySessionToken } from '@/lib/auth';
-import { AUTH_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_COOKIE_NAME, GALLERY_CREATOR_ROLES } from '@/lib/constants';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -42,12 +42,12 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: 'Akses ditolak.' }, { status: 401 });
 
     const session = await verifySessionToken(token);
-    if (!session || session.role !== 'administrator') {
-      return NextResponse.json({ error: 'Hanya untuk Administrator.' }, { status: 403 });
+    if (!session || !GALLERY_CREATOR_ROLES.includes(session.role as any)) {
+      return NextResponse.json({ error: 'Akses ditolak: Anda tidak memiliki izin untuk mengunggah foto.' }, { status: 403 });
     }
 
     const body = await req.json();
-    const { title, description, image, album_id } = body;
+    const { title, description, image, album_id, is_published } = body;
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: 'Judul foto wajib diisi.' }, { status: 400 });
@@ -62,6 +62,8 @@ export async function POST(req: NextRequest) {
         description: description?.trim() || null,
         image,
         album_id: album_id || null,
+        uploaded_by_id: session.id,
+        is_published: is_published !== undefined ? Boolean(is_published) : true,
       },
       include: {
         album: { select: { id: true, title: true } },

@@ -44,6 +44,8 @@ model User {
   borrowed_books       BookLoan[]                @relation("UserBookLoans")
   handled_book_loans   BookLoan[]                @relation("HandledBookLoans")
   uploaded_ebooks      EBook[]                   @relation("UserUploadedEBooks")
+  created_albums       GalleryAlbum[]            @relation("UserCreatedAlbums")
+  uploaded_photos      GalleryPhoto[]            @relation("UserUploadedPhotos")
 
   @@map("users")
 }
@@ -102,26 +104,37 @@ model DailyMessage {
 }
 
 model GalleryAlbum {
-  id          String         @id @default(cuid())
-  title       String
-  description String?
-  photos      GalleryPhoto[]
-  created_at  DateTime       @default(now())
-  updated_at  DateTime       @updatedAt
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  is_published  Boolean        @default(true)
+  created_by_id String?
+  created_by    User?          @relation("UserCreatedAlbums", fields: [created_by_id], references: [id], onDelete: SetNull)
+  photos        GalleryPhoto[]
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
 
+  @@index([created_by_id])
+  @@index([is_published])
   @@map("gallery_albums")
 }
 
 model GalleryPhoto {
-  id          String        @id @default(cuid())
-  album_id    String?
-  album       GalleryAlbum? @relation(fields: [album_id], references: [id], onDelete: Cascade)
-  title       String
-  description String?
-  image       String
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  album_id       String?
+  album          GalleryAlbum? @relation(fields: [album_id], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  image          String
+  is_published   Boolean       @default(true)
+  uploaded_by_id String?
+  uploaded_by    User?         @relation("UserUploadedPhotos", fields: [uploaded_by_id], references: [id], onDelete: SetNull)
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
 
+  @@index([album_id])
+  @@index([uploaded_by_id])
+  @@index([is_published])
   @@map("gallery_photos")
 }
 

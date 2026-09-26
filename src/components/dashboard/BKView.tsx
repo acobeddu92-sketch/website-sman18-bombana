@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import LogoutButton from './LogoutButton';
+import GalleryManagementModal from './GalleryManagementModal';
 import { UserRole } from '@/lib/constants';
 import {
   HeartHandshake,
@@ -13,6 +14,7 @@ import {
   AlertCircle,
   Search,
   Filter,
+  Image as ImageIcon,
   Plus,
   X,
   ChevronRight,
@@ -60,6 +62,7 @@ type BKTab =
 export default function BKView({ user }: Props) {
   const [activeTab, setActiveTab] = useState<BKTab>('dashboard');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
   // Data States
   const [stats, setStats] = useState({
@@ -644,6 +647,16 @@ export default function BKView({ user }: Props) {
                 </button>
               );
             })}
+            <button
+              type="button"
+              onClick={() => setIsGalleryModalOpen(true)}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <ImageIcon className="w-4 h-4 text-emerald-600" />
+                <span>Galeri &amp; Dokumentasi</span>
+              </div>
+            </button>
           </aside>
 
           {/* Drawer Navigasi (Mobile) */}
@@ -713,6 +726,19 @@ export default function BKView({ user }: Props) {
                         </button>
                       );
                     })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileNavOpen(false);
+                        setIsGalleryModalOpen(true);
+                      }}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <ImageIcon className="w-4 h-4 text-emerald-600" />
+                        <span>Galeri &amp; Dokumentasi</span>
+                      </div>
+                    </button>
                   </nav>
                 </div>
                 <div className="pt-4 border-t border-slate-100">
@@ -2206,6 +2232,12 @@ export default function BKView({ user }: Props) {
           </div>
         </div>
       )}
+
+      <GalleryManagementModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => setIsGalleryModalOpen(false)}
+        userRole={user.role}
+      />
     </div>
   );
 }

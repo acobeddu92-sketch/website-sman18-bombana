@@ -18,6 +18,9 @@ import {
   Users,
   ArrowRight,
   ShieldCheck,
+  Camera,
+  Image as ImageIcon,
+  Layers,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -28,9 +31,11 @@ export default async function HomePage() {
   let principalProfile = null;
   let homeBackground = null;
   let activePrincipal = null;
+  let latestPhotos: any[] = [];
+  let recentAlbums: any[] = [];
 
   try {
-    [schoolProfile, principalProfile, homeBackground, activePrincipal] = await Promise.all([
+    const [sp, pp, hb, ap, lp, ra] = await Promise.all([
       prisma.schoolProfile.findFirst(),
       prisma.principalProfile.findFirst(),
       prisma.homeBackground.findFirst({
@@ -41,7 +46,32 @@ export default async function HomePage() {
         orderBy: { updated_at: 'desc' },
       }),
       getActivePrincipal(),
+      prisma.galleryPhoto.findMany({
+        where: {
+          is_published: true,
+          album: { is_published: true },
+        },
+        take: 6,
+        orderBy: { created_at: 'desc' },
+        include: {
+          album: { select: { id: true, title: true } },
+        },
+      }),
+      prisma.galleryAlbum.findMany({
+        where: { is_published: true },
+        take: 4,
+        orderBy: { created_at: 'desc' },
+        include: {
+          _count: { select: { photos: { where: { is_published: true } } } },
+        },
+      }),
     ]);
+    schoolProfile = sp;
+    principalProfile = pp;
+    homeBackground = hb;
+    activePrincipal = ap;
+    latestPhotos = lp || [];
+    recentAlbums = ra || [];
   } catch (err) {
     console.error('Database query error in HomePage:', err);
   }
@@ -153,8 +183,8 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* 3. CONTENT HOME LAYER */}
-      <div className="relative z-10 flex-1 flex flex-col justify-between py-2 sm:py-2.5 lg:py-2 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full gap-2.5 sm:gap-3 lg:gap-2.5 lg:h-[calc(100dvh-5.5rem)] lg:max-h-[calc(100dvh-5.5rem)] lg:overflow-hidden">
+      {/* 3. CONTENT HOME LAYER (Single-screen desktop 100vh lock) */}
+      <div className="relative z-10 flex-1 flex flex-col justify-between py-2 sm:py-2.5 lg:py-2 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full gap-2 sm:gap-2.5 lg:gap-2 lg:h-[calc(100dvh-5.5rem)] lg:max-h-[calc(100dvh-5.5rem)] lg:overflow-hidden">
       
       {/* 1. HERO COMPACT SECTION (Glassmorphism Semi-Transparent) */}
       <div className="rounded-2xl bg-gradient-to-r from-emerald-950/40 via-emerald-900/35 to-teal-950/40 text-white p-3.5 sm:p-4 lg:p-4 shadow-lg shadow-black/10 border border-white/20 relative overflow-hidden shrink-0">
@@ -316,6 +346,86 @@ export default async function HomePage() {
             </div>
           );
         })}
+      </div>
+
+      {/* 4. SECTION GALERI COMPACT (Viewport-Friendly Single-Screen) */}
+      <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-2 sm:p-2.5 lg:p-2.5 shadow-lg shadow-black/10 text-white shrink-0">
+        <div className="flex items-center justify-between gap-3 mb-1.5 px-0.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 text-[10px] font-bold uppercase tracking-wider border border-emerald-400/30 shrink-0">
+              <Camera className="w-3 h-3" />
+              <span>Galeri Sekolah</span>
+            </div>
+            <span className="text-xs font-bold text-white drop-shadow-xs truncate hidden sm:inline">
+              Dokumentasi Kegiatan Terkini
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {recentAlbums.length > 0 && (
+              <div className="hidden lg:flex items-center gap-1.5">
+                {recentAlbums.slice(0, 3).map((alb) => (
+                  <a
+                    key={alb.id}
+                    href={`/galeri?album=${alb.id}`}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/10 hover:bg-white/20 text-[10px] text-emerald-200 border border-white/15 transition-colors"
+                  >
+                    <Layers className="w-2.5 h-2.5" />
+                    <span className="truncate max-w-[120px]">{alb.title}</span>
+                  </a>
+                ))}
+              </div>
+            )}
+            <a
+              href="/galeri"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/95 hover:bg-white text-emerald-950 font-bold text-[11px] shadow-xs transition-all group shrink-0"
+            >
+              <span>Lihat Semua Galeri</span>
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+            </a>
+          </div>
+        </div>
+
+        {/* Photos Horizontal Row (4-6 photos) */}
+        {latestPhotos.length === 0 ? (
+          <div className="py-2.5 text-center bg-white/5 rounded-xl border border-dashed border-white/15 px-3">
+            <p className="text-[11px] text-emerald-100/70">
+              Belum ada foto dokumentasi di galeri publik.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+            {latestPhotos.slice(0, 6).map((photo) => (
+              <a
+                key={photo.id}
+                href="/galeri"
+                className="group relative h-14 sm:h-16 lg:h-14 rounded-xl overflow-hidden bg-slate-900/50 border border-white/20 hover:border-emerald-300 transition-all shadow-xs block"
+                title={photo.title}
+              >
+                <SafeImage
+                  src={photo.image}
+                  alt={photo.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  fallback={
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 text-[9px]">
+                      Foto
+                    </div>
+                  }
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
+                  <span className="text-[9px] font-bold text-white line-clamp-1 leading-tight">
+                    {photo.title}
+                  </span>
+                </div>
+                {photo.album?.title && (
+                  <span className="absolute top-1 left-1 px-1.5 py-0.2 rounded bg-black/60 text-emerald-200 text-[8px] font-semibold backdrop-blur-xs">
+                    {photo.album.title}
+                  </span>
+                )}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       </div>

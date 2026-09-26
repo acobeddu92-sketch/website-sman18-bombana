@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import LogoutButton from './LogoutButton';
 import SafeImage from '@/components/ui/SafeImage';
+import GalleryManagementModal from './GalleryManagementModal';
 import { UserRole } from '@/lib/constants';
 import {
   LayoutDashboard,
@@ -97,6 +98,7 @@ export default function PrincipalView({ user, data }: Props) {
 
   const [approvalModalItem, setApprovalModalItem] = useState<any | null>(null);
   const [approvalFeedback, setApprovalFeedback] = useState('');
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
   // Password update states
   const [oldPassword, setOldPassword] = useState('');
@@ -1084,13 +1086,23 @@ export default function PrincipalView({ user, data }: Props) {
           {/* TAB 5: DOKUMENTASI KEGIATAN */}
           {activeTab === 'kegiatan' && (
             <div className="space-y-6 animate-fadeIn">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                  Dokumentasi Kegiatan Sekolah
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Pemantauan album dokumentasi aktivitas akademik, kesiswaan, dan pelestarian lingkungan Green School.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                    Dokumentasi Kegiatan Sekolah
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Pemantauan album dokumentasi aktivitas akademik, kesiswaan, dan pelestarian lingkungan Green School.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsGalleryModalOpen(true)}
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shadow-xs shrink-0 self-start sm:self-auto"
+                >
+                  <CalendarCheck className="w-4 h-4" />
+                  <span>Kelola Galeri & Dokumentasi</span>
+                </button>
               </div>
 
               {/* Dokumentasi Galeri Kegiatan (Album) */}
@@ -1770,6 +1782,13 @@ export default function PrincipalView({ user, data }: Props) {
           </div>
         </div>
       )}
+
+      {/* Modal Pengelolaan Galeri & Dokumentasi Terpadu */}
+      <GalleryManagementModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => setIsGalleryModalOpen(false)}
+        userRole={user.role}
+      />
     </div>
   );
 }

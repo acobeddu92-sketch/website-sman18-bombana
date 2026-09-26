@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifySessionToken } from '@/lib/auth';
-import { AUTH_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_COOKIE_NAME, GALLERY_CREATOR_ROLES } from '@/lib/constants';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -32,12 +32,15 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: 'Akses ditolak.' }, { status: 401 });
 
     const session = await verifySessionToken(token);
-    if (!session || session.role !== 'administrator') {
-      return NextResponse.json({ error: 'Hanya untuk Administrator.' }, { status: 403 });
+    if (!session || !GALLERY_CREATOR_ROLES.includes(session.role as any)) {
+      return NextResponse.json(
+        { error: 'Akses ditolak: Anda tidak memiliki izin untuk membuat album galeri.' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
-    const { title, description } = body;
+    const { title, description, is_published } = body;
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: 'Nama album wajib diisi.' }, { status: 400 });
@@ -47,6 +50,8 @@ export async function POST(req: NextRequest) {
       data: {
         title: title.trim(),
         description: description?.trim() || null,
+        created_by_id: session.id,
+        is_published: is_published !== undefined ? Boolean(is_published) : true,
       },
     });
 
